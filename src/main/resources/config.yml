@@ -1,0 +1,48 @@
+# FrizzlenEdit Configuration
+
+# Maximum number of blocks allowed in a selection (10 million by default)
+max-selection-blocks: 10000000
+
+# Number of operations to store in the undo history
+undo-history-size: 25
+
+# Maximum brush size (radius in blocks)
+max-brush-size: 30
+
+# Maximum number of blocks in clipboard (1 million by default)
+clipboard-size-limit: 1000000
+
+# Storage type for schematics and history (file or mysql)
+storage-type: file
+
+# MySQL configuration (only used if storage-type is mysql)
+mysql:
+  host: localhost
+  port: 3306
+  database: frizzlenedit
+  username: root
+  password: password
+  table-prefix: frizzlenedit_
+
+# Threading configuration
+threading:
+  # Maximum number of blocks to process in a single chunk (0 = use default calculation)
+  chunk-size: 0
+  # Maximum number of async tasks to run concurrently (0 = use available processors)
+  max-concurrent-tasks: 0
+
+# Performance optimizations
+performance:
+  # Whether to use fast mode for operations (less accurate but faster)
+  fast-mode: false
+  # Whether to use physics for operations (e.g., sand falling)
+  use-physics: true
+  # Whether to notify nearby blocks of changes (redstone, etc.)
+  notify-neighbors: true
+
+# Batch paste settings
+# Number of blocks to process in each batch for large paste operations
+batch-paste-size: 1000
+
+# Number of server ticks to wait between batches (1 tick = 1/20 second)
+batch-paste-delay: 1 

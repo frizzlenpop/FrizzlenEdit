@@ -4,4 +4,263 @@ main: org.frizzlenpop.frizzlenEdit.FrizzlenEdit
 api-version: '1.21'
 load: STARTUP
 authors: [ frizzlenpop ]
-description: A Plugin for Editing the World. 
+description: A high-performance WorldEdit alternative for manipulating the Minecraft world quickly and efficiently.
+
+commands:
+  frizzlenedit:
+    description: Main FrizzlenEdit command
+    aliases: [fe]
+    usage: /<command> [help|reload|version]
+  
+  # Selection Commands
+  wand:
+    description: Gives a selection wand
+    usage: //wand
+    permission: frizzlenedit.selection.wand
+    aliases: [//wand]
+  
+  pos1:
+    description: Set position 1 of the selection
+    usage: //pos1
+    permission: frizzlenedit.selection.pos
+    aliases: [//pos1, //p1]
+  
+  pos2:
+    description: Set position 2 of the selection
+    usage: //pos2
+    permission: frizzlenedit.selection.pos
+    aliases: [//pos2, //p2]
+  
+  expand:
+    description: Expand the selection
+    usage: //expand <amount> [direction]
+    permission: frizzlenedit.selection.expand
+    aliases: [//expand]
+  
+  contract:
+    description: Contract the selection
+    usage: //contract <amount> [direction]
+    permission: frizzlenedit.selection.contract
+    aliases: [//contract]
+  
+  size:
+    description: Show the size of the selection
+    usage: //size
+    permission: frizzlenedit.selection.info
+    aliases: [//size]
+  
+  # Clipboard Commands
+  cut:
+    description: Cut the selection to clipboard
+    usage: //cut
+    permission: frizzlenedit.clipboard.cut
+    aliases: [//cut]
+  
+  copy:
+    description: Copy the selection to clipboard
+    usage: //copy
+    permission: frizzlenedit.clipboard.copy
+    aliases: [//copy]
+  
+  paste:
+    description: Paste from clipboard
+    usage: //paste
+    permission: frizzlenedit.clipboard.paste
+    aliases: [//paste]
+  
+  pastelarge:
+    description: Paste large clipboard content in batches
+    usage: //pastelarge [noair] [batch <size>] [delay <ticks>]
+    permission: frizzlenedit.clipboard.pastelarge
+    aliases: [//pastelarge]
+  
+  flip:
+    description: Flip the clipboard
+    usage: //flip [direction]
+    permission: frizzlenedit.clipboard.flip
+    aliases: [//flip]
+  
+  rotate:
+    description: Rotate the clipboard
+    usage: //rotate <degrees>
+    permission: frizzlenedit.clipboard.rotate
+    aliases: [//rotate]
+  
+  # History Commands
+  undo:
+    description: Undo the last operation
+    usage: //undo
+    permission: frizzlenedit.history.undo
+    aliases: [//undo]
+  
+  redo:
+    description: Redo the last undone operation
+    usage: //redo
+    permission: frizzlenedit.history.redo
+    aliases: [//redo]
+  
+  # Block Manipulation Commands
+  set:
+    description: Set all blocks in the selection
+    usage: //set <block>
+    permission: frizzlenedit.region.set
+    aliases: [//set]
+  
+  replace:
+    description: Replace blocks in the selection
+    usage: //replace <from> <to>
+    permission: frizzlenedit.region.replace
+    aliases: [//replace]
+  
+  fill:
+    description: Fill blocks in a sphere
+    usage: //fill <block> <radius>
+    permission: frizzlenedit.region.fill
+    aliases: [//fill]
+  
+  walls:
+    description: Create walls around the selection
+    usage: //walls <block>
+    permission: frizzlenedit.region.walls
+    aliases: [//walls]
+  
+  outline:
+    description: Create an outline around the selection
+    usage: //outline <block>
+    permission: frizzlenedit.region.outline
+    aliases: [//outline]
+  
+  hollow:
+    description: Make the selection hollow
+    usage: //hollow <block>
+    permission: frizzlenedit.region.hollow
+    aliases: [//hollow]
+  
+  smooth:
+    description: Smooth the terrain in the selection
+    usage: //smooth
+    permission: frizzlenedit.region.smooth
+    aliases: [//smooth]
+  
+  # Brush Commands
+  brush:
+    description: Set a brush
+    usage: //brush <type> <options...>
+    permission: frizzlenedit.brush
+    aliases: [//brush, //br]
+  
+  brushtool:
+    description: Get a brush tool to use brushes
+    usage: //brushtool
+    permission: frizzlenedit.brush.tool
+    aliases: [//brushtool, //bt]
+  
+  mask:
+    description: Set a brush mask
+    usage: //mask <filter>
+    permission: frizzlenedit.brush.mask
+    aliases: [//mask]
+  
+  # Schematic Commands
+  schematic:
+    description: Schematic management
+    usage: //schematic <save|load|list|delete> <name>
+    permission: frizzlenedit.schematic
+    aliases: [//schematic, //schem]
+  
+  # Terraforming Commands
+  naturalize:
+    description: Make the selection look natural
+    usage: //naturalize
+    permission: frizzlenedit.terraforming.naturalize
+    aliases: [//naturalize]
+  
+  overlay:
+    description: Add overlay to the terrain
+    usage: //overlay <block>
+    permission: frizzlenedit.terraforming.overlay
+    aliases: [//overlay]
+  
+  caves:
+    description: Generate caves
+    usage: //caves
+    permission: frizzlenedit.terraforming.caves
+    aliases: [//caves]
+  
+  # Chunk Commands
+  regen:
+    description: Regenerate chunks
+    usage: //regen
+    permission: frizzlenedit.chunk.regen
+    aliases: [//regen]
+  
+  chunkinfo:
+    description: Show chunk information
+    usage: //chunkinfo
+    permission: frizzlenedit.chunk.info
+    aliases: [//chunkinfo]
+
+permissions:
+  frizzlenedit.*:
+    description: Gives access to all FrizzlenEdit commands
+    default: op
+    children:
+      frizzlenedit.admin: true
+      frizzlenedit.selection.*: true
+      frizzlenedit.clipboard.*: true
+      frizzlenedit.history.*: true
+      frizzlenedit.region.*: true
+      frizzlenedit.brush.*: true
+      frizzlenedit.schematic.*: true
+      frizzlenedit.terraforming.*: true
+      frizzlenedit.chunk.*: true
+  
+  frizzlenedit.admin:
+    description: Allows access to administrative commands
+    default: op
+    children:
+      frizzlenedit.reload: true
+  
+  frizzlenedit.selection.*:
+    description: Allows all selection commands
+    default: op
+    children:
+      frizzlenedit.selection.wand: true
+      frizzlenedit.selection.pos: true
+      frizzlenedit.selection.expand: true
+      frizzlenedit.selection.contract: true
+      frizzlenedit.selection.info: true
+
+  frizzlenedit.brush.*:
+    description: Allows all brush commands
+    default: op
+    children:
+      frizzlenedit.brush: true
+      frizzlenedit.brush.sphere: true
+      frizzlenedit.brush.cylinder: true
+      frizzlenedit.brush.smooth: true
+      frizzlenedit.brush.mask: true
+      frizzlenedit.brush.tool: true
+
+  frizzlenedit.clipboard.*:
+    description: Allows all clipboard commands
+    default: op
+    children:
+      frizzlenedit.clipboard.copy: true
+      frizzlenedit.clipboard.cut: true
+      frizzlenedit.clipboard.paste: true
+      frizzlenedit.clipboard.pastelarge: true
+      frizzlenedit.clipboard.flip: true
+      frizzlenedit.clipboard.rotate: true
+
+  frizzlenedit.schematic.*:
+    description: Allows all schematic commands
+    default: op
+    children:
+      frizzlenedit.schematic: true
+      frizzlenedit.schematic.save: true
+      frizzlenedit.schematic.load: true
+      frizzlenedit.schematic.paste: true
+      frizzlenedit.schematic.pastelarge: true
+      frizzlenedit.schematic.delete: true
+      frizzlenedit.schematic.list: true
