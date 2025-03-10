@@ -12,6 +12,7 @@ import org.frizzlenpop.frizzlenEdit.selection.Region;
 import org.frizzlenpop.frizzlenEdit.utils.Logger;
 import org.frizzlenpop.frizzlenEdit.utils.Vector3;
 import org.frizzlenpop.frizzlenEdit.utils.NBTUtils;
+import org.frizzlenpop.frizzlenEdit.schematic.paste.OptimizedPasteSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +31,8 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.HashMap;
+import java.util.logging.Level;
+import org.bukkit.Location;
 
 /**
  * Manages schematics (saving, loading, listing, etc.).
@@ -312,83 +315,70 @@ public class SchematicManager {
     }
     
     /**
-     * Paste a schematic at a specific location using batch processing with automatic
-     * performance optimization based on server TPS.
-     * 
-     * The batch size and tick delay will automatically adjust based on server performance
-     * to maintain optimal TPS while pasting as quickly as possible.
-     * 
-     * @param player The player
-     * @param name The name of the schematic
-     * @param position The position to paste at
-     * @param ignoreAir Whether to ignore air blocks
-     * @param initialBatchSize Initial batch size (optional, defaults to config value)
-     * @param initialDelay Initial tick delay (optional, defaults to config value)
+     * Pastes a schematic using the optimized paste system with chunk-based processing,
+     * deferred physics, multi-threading, and adaptive performance monitoring.
+     *
+     * @param player The player executing the command
+     * @param name The name of the schematic to paste
+     * @param noAir Whether to skip air blocks when pasting
+     * @param initialBatchSize The initial batch size for pasting
+     * @param initialDelay The initial delay between batches
      */
-    public void adaptivePasteSchematic(Player player, String name, Vector3 position, boolean ignoreAir) {
-        adaptivePasteSchematic(player, name, position, ignoreAir, 
-                              plugin.getConfigManager().getBatchPasteSize(),
-                              plugin.getConfigManager().getBatchPasteDelay());
+    public void optimizedPasteSchematic(Player player, String name, boolean noAir, int initialBatchSize, int initialDelay) {
+        // Ensure the schematic exists
+        File file = new File(schematicsDir, name + ".schem");
+        if (!file.exists()) {
+            // Try with .schematic extension as a fallback
+            file = new File(schematicsDir, name + ".schematic");
+            if (!file.exists()) {
+                player.sendMessage(ChatColor.RED + "Schematic " + name + " not found!");
+                return;
+            }
+        }
+
+        try {
+            // Load the schematic data
+            Map<String, Object> schematicData = NBTUtils.readSchematic(file);
+            Clipboard clipboard = load(schematicData);
+            
+            if (clipboard == null) {
+                player.sendMessage(ChatColor.RED + "Failed to load schematic data.");
+                return;
+            }
+            
+            World world = player.getWorld();
+            Location origin = player.getLocation();
+            
+            // Create and start the optimized paste operation
+            OptimizedPasteSystem pasteSystem = new OptimizedPasteSystem(
+                plugin, player, clipboard, world, origin, noAir, 
+                initialBatchSize, initialDelay, plugin.getServerPerformanceMonitor()
+            );
+            pasteSystem.start();
+            
+            player.sendMessage(ChatColor.GREEN + "Started optimized paste for " + name);
+        } catch (IOException e) {
+            player.sendMessage(ChatColor.RED + "Error loading schematic: " + e.getMessage());
+            plugin.getLogger().log(Level.SEVERE, "Error loading schematic " + name, e);
+        } catch (Exception e) {
+            player.sendMessage(ChatColor.RED + "An unexpected error occurred: " + e.getMessage());
+            plugin.getLogger().log(Level.SEVERE, "Unexpected error pasting schematic " + name, e);
+        }
     }
     
     /**
-     * Paste a schematic at a specific location using batch processing with automatic
-     * performance optimization based on server TPS.
-     * 
-     * The batch size and tick delay will automatically adjust based on server performance
-     * to maintain optimal TPS while pasting as quickly as possible.
-     * 
-     * @param player The player
-     * @param name The name of the schematic
-     * @param position The position to paste at
-     * @param ignoreAir Whether to ignore air blocks
-     * @param initialBatchSize Initial batch size
-     * @param initialDelay Initial tick delay
+     * Pastes a schematic using adaptive performance monitoring to optimize batch size and delay.
+     * This method now uses the completely optimized paste system.
+     *
+     * @param player The player executing the command
+     * @param name The name of the schematic to paste
+     * @param noAir Whether to skip air blocks when pasting
+     * @param initialBatchSize The initial batch size for pasting
+     * @param initialDelay The initial delay between batches
      */
-    public void adaptivePasteSchematic(Player player, String name, Vector3 position, 
-                                      boolean ignoreAir, int initialBatchSize, int initialDelay) {
-        // Check if the schematic exists
-        File file = new File(schematicsDir, name + ".schem");
-        if (!file.exists()) {
-            player.sendMessage(ChatColor.RED + "Schematic " + name + " does not exist.");
-            return;
-        }
-        
-        // Load and paste the schematic asynchronously
-        plugin.runAsync(() -> {
-            try {
-                Logger.info("Player " + player.getName() + " adaptive pasting schematic " + name);
-                
-                // Load the schematic
-                Clipboard clipboard = SchematicFormat.load(file);
-                
-                // Create and execute a batch paste operation on the main thread
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    try {
-                        // Create a batch paste operation
-                        BatchPasteOperation operation = new BatchPasteOperation(
-                            plugin, player, position, clipboard, ignoreAir, initialBatchSize, initialDelay, 
-                            "Adaptive Paste Schematic"
-                        );
-                        
-                        // Execute the operation
-                        plugin.getOperationManager().execute(player, operation);
-                        
-                    } catch (Exception e) {
-                        Logger.severe("Error adaptive pasting schematic: " + e.getMessage());
-                        e.printStackTrace();
-                        player.sendMessage(ChatColor.RED + "Error adaptive pasting schematic: " + e.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                Logger.severe("Error loading schematic for adaptive paste: " + e.getMessage());
-                e.printStackTrace();
-                
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    player.sendMessage(ChatColor.RED + "Error loading schematic for adaptive paste: " + e.getMessage());
-                });
-            }
-        });
+    public void adaptivePasteSchematic(Player player, String name, boolean noAir, int initialBatchSize, int initialDelay) {
+        // Simply delegate to the optimized paste method
+        optimizedPasteSchematic(player, name, noAir, initialBatchSize, initialDelay);
     }
     
     /**

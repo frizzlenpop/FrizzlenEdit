@@ -268,62 +268,45 @@ public class SchematicCommands {
             }
             
             if (args.length < 1) {
-                player.sendMessage(ChatColor.RED + "Usage: //schematic pastelarge <n> [noair] [batch <size>] [delay <ticks>] [noadaptive]");
+                player.sendMessage(ChatColor.RED + "Usage: //schematic pastelarge <name> [noair] [batch <size>] [delay <ticks>] [noadaptive]");
                 return true;
             }
             
             String name = args[0];
-            boolean ignoreAir = false;
-            int batchSize = plugin.getConfigManager().getBatchPasteSize(); // Default from config
-            int tickDelay = plugin.getConfigManager().getBatchPasteDelay(); // Default from config
-            boolean useAdaptive = true; // Use adaptive logic by default
+            boolean noAir = false;
+            int batchSize = plugin.getConfig().getInt("paste.batch-size", 500);
+            int delay = plugin.getConfig().getInt("paste.delay", 1);
+            boolean useAdaptive = true;
             
             // Parse additional arguments
             for (int i = 1; i < args.length; i++) {
-                String arg = args[i].toLowerCase();
-                
-                if (arg.equals("noair")) {
-                    ignoreAir = true;
-                } else if (arg.equals("batch") && i + 1 < args.length) {
+                if (args[i].equalsIgnoreCase("noair")) {
+                    noAir = true;
+                } else if (args[i].equalsIgnoreCase("batch") && i + 1 < args.length) {
                     try {
-                        batchSize = Integer.parseInt(args[++i]);
-                        if (batchSize <= 0) {
-                            player.sendMessage(ChatColor.RED + "Batch size must be positive.");
-                            return true;
-                        }
+                        batchSize = Integer.parseInt(args[i + 1]);
+                        i++;
                     } catch (NumberFormatException e) {
-                        player.sendMessage(ChatColor.RED + "Invalid batch size: " + args[i]);
+                        player.sendMessage(ChatColor.RED + "Invalid batch size: " + args[i + 1]);
                         return true;
                     }
-                } else if (arg.equals("delay") && i + 1 < args.length) {
+                } else if (args[i].equalsIgnoreCase("delay") && i + 1 < args.length) {
                     try {
-                        tickDelay = Integer.parseInt(args[++i]);
-                        if (tickDelay < 0) {
-                            player.sendMessage(ChatColor.RED + "Delay must be non-negative.");
-                            return true;
-                        }
+                        delay = Integer.parseInt(args[i + 1]);
+                        i++;
                     } catch (NumberFormatException e) {
-                        player.sendMessage(ChatColor.RED + "Invalid delay: " + args[i]);
+                        player.sendMessage(ChatColor.RED + "Invalid delay: " + args[i + 1]);
                         return true;
                     }
-                } else if (arg.equals("noadaptive")) {
+                } else if (args[i].equalsIgnoreCase("noadaptive")) {
                     useAdaptive = false;
                 }
             }
             
-            Vector3 position = Vector3.fromLocation(player.getLocation());
-            player.sendMessage(ChatColor.YELLOW + "Starting large schematic paste operation...");
-            
-            // Use adaptive paste method if enabled, otherwise use the fixed batch paste
-            if (useAdaptive) {
-                player.sendMessage(ChatColor.YELLOW + "Using adaptive performance optimization with initial batch size: " + 
-                                 batchSize + ", delay: " + tickDelay);
-                plugin.getSchematicManager().adaptivePasteSchematic(player, name, position, ignoreAir, batchSize, tickDelay);
-            } else {
-                player.sendMessage(ChatColor.YELLOW + "Using fixed batch settings: size: " + 
-                                 batchSize + ", delay: " + tickDelay);
-                plugin.getSchematicManager().batchPasteSchematic(player, name, position, ignoreAir, batchSize, tickDelay);
-            }
+            // Now we'll use the optimized paste system regardless of whether adaptive is enabled
+            // The optimization includes chunk-based processing, deferred physics, progressive adaptive sizing,
+            // multi-threaded block processing, and block type prioritization
+            plugin.getSchematicManager().optimizedPasteSchematic(player, name, noAir, batchSize, delay);
             
             return true;
         }
@@ -342,7 +325,6 @@ public class SchematicCommands {
         
         @Override
         public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-            // Check if the sender is a player
             if (!(sender instanceof Player)) {
                 sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
                 return true;
@@ -350,35 +332,32 @@ public class SchematicCommands {
             
             Player player = (Player) sender;
             
-            // Check if the player has permission
             if (!player.hasPermission("frizzlenedit.schematic.adaptivepaste")) {
                 player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
                 return true;
             }
             
-            // Check for correct usage
             if (args.length < 1) {
-                player.sendMessage(ChatColor.RED + "Usage: //schematic adaptivepaste <n> [noair]");
+                player.sendMessage(ChatColor.RED + "Usage: //schematic adaptivepaste <name> [noair]");
                 return true;
             }
             
-            // Get the schematic name
             String name = args[0];
+            boolean noAir = false;
             
-            // Check if we should ignore air
-            boolean ignoreAir = false;
-            if (args.length > 1 && args[1].equalsIgnoreCase("noair")) {
-                ignoreAir = true;
+            // Parse noair argument
+            for (int i = 1; i < args.length; i++) {
+                if (args[i].equalsIgnoreCase("noair")) {
+                    noAir = true;
+                }
             }
             
-            // Get player position
-            Vector3 position = Vector3.fromLocation(player.getLocation());
+            // Get default batch size and delay from config
+            int batchSize = plugin.getConfig().getInt("paste.batch-size", 500);
+            int delay = plugin.getConfig().getInt("paste.delay", 1);
             
-            // Adaptively paste the schematic
-            plugin.getSchematicManager().adaptivePasteSchematic(player, name, position, ignoreAir);
-            
-            player.sendMessage(ChatColor.GREEN + "Adaptively pasting schematic " + name + " at your location.");
-            player.sendMessage(ChatColor.YELLOW + "The paste operation will automatically adjust speed based on server performance.");
+            // Use our improved optimized system which combines all the optimizations
+            plugin.getSchematicManager().optimizedPasteSchematic(player, name, noAir, batchSize, delay);
             
             return true;
         }

@@ -106,15 +106,16 @@ public class SchematicCommandHandler implements CommandExecutor {
      * @param player The player to show help to
      */
     private void showHelp(Player player) {
-        player.sendMessage(ChatColor.BLUE + "==== FrizzlenEdit Schematic Commands ====");
-        player.sendMessage(ChatColor.WHITE + "=== Schematic Commands ===");
-        player.sendMessage(ChatColor.GRAY + "//schematic save <n>" + ChatColor.WHITE + " - Save your selection as a schematic");
-        player.sendMessage(ChatColor.GRAY + "//schematic load <n>" + ChatColor.WHITE + " - Load a schematic to your clipboard");
-        player.sendMessage(ChatColor.GRAY + "//schematic delete <n>" + ChatColor.WHITE + " - Delete a schematic");
-        player.sendMessage(ChatColor.GRAY + "//schematic list" + ChatColor.WHITE + " - List available schematics");
-        player.sendMessage(ChatColor.GRAY + "//schematic formats" + ChatColor.WHITE + " - List supported schematic formats");
-        player.sendMessage(ChatColor.GRAY + "//schematic paste <n> [noair]" + ChatColor.WHITE + " - Paste a schematic at your location");
-        player.sendMessage(ChatColor.GRAY + "//schematic pastelarge <n> [noair] [batch <size>] [delay <ticks>] [noadaptive]" + ChatColor.WHITE + " - Paste a large schematic with adaptive performance (default)");
-        player.sendMessage(ChatColor.GRAY + "//schematic adaptivepaste <n> [noair]" + ChatColor.WHITE + " - Paste with automatic performance optimization");
+        player.sendMessage(ChatColor.YELLOW + "=== Schematic Commands ===");
+        player.sendMessage(ChatColor.GOLD + "/schematic save <name>" + ChatColor.WHITE + " - Save your selection as a schematic");
+        player.sendMessage(ChatColor.GOLD + "/schematic load <name>" + ChatColor.WHITE + " - Load a schematic to your clipboard");
+        player.sendMessage(ChatColor.GOLD + "/schematic delete <name>" + ChatColor.WHITE + " - Delete a schematic");
+        player.sendMessage(ChatColor.GOLD + "/schematic list" + ChatColor.WHITE + " - List available schematics");
+        player.sendMessage(ChatColor.GOLD + "/schematic formats" + ChatColor.WHITE + " - List supported schematic formats");
+        player.sendMessage(ChatColor.GOLD + "/schematic paste <name> [noair]" + ChatColor.WHITE + " - Paste a schematic at your location");
+        player.sendMessage(ChatColor.GOLD + "/schematic pastelarge <name> [noair] [batch <size>] [delay <ticks>] [noadaptive]" + 
+                            ChatColor.WHITE + " - Paste a large schematic with optimized performance");
+        player.sendMessage(ChatColor.GOLD + "/schematic adaptivepaste <name> [noair]" + 
+                            ChatColor.WHITE + " - Paste with automatic performance optimization");
     }
 } 
