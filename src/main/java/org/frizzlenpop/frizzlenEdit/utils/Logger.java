@@ -1,6 +1,7 @@
 package org.frizzlenpop.frizzlenEdit.utils;
 
 import org.bukkit.plugin.Plugin;
+import org.frizzlenpop.frizzlenEdit.FrizzlenEdit;
 
 import java.util.logging.Level;
 
@@ -10,6 +11,7 @@ import java.util.logging.Level;
 public class Logger {
     private static Plugin plugin;
     private static final String LOG_PREFIX = "[FrizzlenEdit] ";
+    private static boolean debugMode = false;
 
     /**
      * Initialize the logger with the plugin instance.
@@ -17,6 +19,29 @@ public class Logger {
      */
     public static void init(Plugin plugin) {
         Logger.plugin = plugin;
+        
+        // Check for debug mode in config if available
+        if (plugin instanceof FrizzlenEdit) {
+            FrizzlenEdit frizzlenEdit = (FrizzlenEdit) plugin;
+            if (frizzlenEdit.getConfigManager() != null) {
+                try {
+                    debugMode = frizzlenEdit.getConfigManager().isDebugModeEnabled();
+                } catch (Exception e) {
+                    // Config not loaded yet, will default to false
+                }
+            }
+        }
+    }
+    
+    /**
+     * Update debug mode from config
+     * @param enabled Whether debug mode is enabled
+     */
+    public static void setDebugMode(boolean enabled) {
+        debugMode = enabled;
+        if (debugMode) {
+            info("Debug mode enabled");
+        }
     }
 
     /**
@@ -59,7 +84,11 @@ public class Logger {
      * @param message The message to log
      */
     public static void debug(String message) {
-        // We could add a config check here for debug mode
-        log(Level.FINE, message);
+        if (debugMode) {
+            log(Level.INFO, "[DEBUG] " + message);
+        } else {
+            // Still log as FINE for server logs that capture everything
+            log(Level.FINE, "[DEBUG] " + message);
+        }
     }
 } 

@@ -8,6 +8,9 @@ import org.bukkit.entity.Player;
 import org.frizzlenpop.frizzlenEdit.FrizzlenEdit;
 import org.frizzlenpop.frizzlenEdit.operations.Operation;
 import org.frizzlenpop.frizzlenEdit.selection.Region;
+import org.bukkit.Material;
+import org.bukkit.util.Vector;
+import org.frizzlenpop.frizzlenEdit.utils.Vector3;
 
 /**
  * Handles block manipulation commands.
@@ -257,6 +260,214 @@ public class BlockCommands {
             
             plugin.getHistoryManager().clearHistory(player);
             player.sendMessage(ChatColor.GREEN + "History cleared.");
+            return true;
+        }
+    }
+    
+    /**
+     * Command handler for the smooth command.
+     */
+    public static class SmoothCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public SmoothCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            if (!player.hasPermission("frizzlenedit.region.smooth")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            if (!plugin.getSelectionManager().hasSelection(player)) {
+                player.sendMessage(ChatColor.RED + "You must make a selection first.");
+                return true;
+            }
+            
+            // Parse optional parameters
+            int iterations = 4; // Default value
+            double heightFactor = 2.0; // Default value
+            
+            if (args.length >= 1) {
+                try {
+                    iterations = Integer.parseInt(args[0]);
+                    if (iterations <= 0) {
+                        player.sendMessage(ChatColor.RED + "Iterations must be greater than 0.");
+                        return true;
+                    }
+                    if (iterations > 10) {
+                        player.sendMessage(ChatColor.RED + "Iterations too large. Maximum is 10 to prevent lag.");
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(ChatColor.RED + "Invalid iterations: " + args[0]);
+                    player.sendMessage(ChatColor.YELLOW + "Usage: //smooth [iterations] [heightFactor]");
+                    return true;
+                }
+            }
+            
+            if (args.length >= 2) {
+                try {
+                    heightFactor = Double.parseDouble(args[1]);
+                    if (heightFactor <= 0.0) {
+                        player.sendMessage(ChatColor.RED + "Height factor must be greater than 0.");
+                        return true;
+                    }
+                    if (heightFactor > 5.0) {
+                        player.sendMessage(ChatColor.RED + "Height factor too large. Maximum is 5.0.");
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(ChatColor.RED + "Invalid height factor: " + args[1]);
+                    player.sendMessage(ChatColor.YELLOW + "Usage: //smooth [iterations] [heightFactor]");
+                    return true;
+                }
+            }
+            
+            // Get the selection
+            Region region = plugin.getSelectionManager().getSelection(player);
+            
+            // Create and execute the operation
+            Operation operation = plugin.getOperationManager().createSmoothOperation(player, region, iterations, heightFactor);
+            plugin.getOperationManager().execute(player, operation);
+            
+            return true;
+        }
+    }
+    
+    /**
+     * Command handler for the drain command.
+     */
+    public static class DrainCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public DrainCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            if (!player.hasPermission("frizzlenedit.region.drain")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            if (!plugin.getSelectionManager().hasSelection(player)) {
+                player.sendMessage(ChatColor.RED + "You must make a selection first.");
+                return true;
+            }
+            
+            // Parse options
+            boolean removeAllLiquids = false; // Default to water only
+            
+            if (args.length >= 1) {
+                String option = args[0].toLowerCase();
+                if (option.equals("all") || option.equals("a")) {
+                    removeAllLiquids = true;
+                    player.sendMessage(ChatColor.YELLOW + "Removing all liquids (water and lava)");
+                } else {
+                    player.sendMessage(ChatColor.YELLOW + "Removing water only. Use //drain all to remove all liquids.");
+                }
+            } else {
+                player.sendMessage(ChatColor.YELLOW + "Removing water only. Use //drain all to remove all liquids.");
+            }
+            
+            // Get the selection
+            Region region = plugin.getSelectionManager().getSelection(player);
+            
+            // Create and execute the operation
+            Operation operation = plugin.getOperationManager().createDrainOperation(player, region, 0, removeAllLiquids);
+            plugin.getOperationManager().execute(player, operation);
+            
+            return true;
+        }
+    }
+    
+    /**
+     * Command handler for the cylinder command.
+     */
+    public static class CylinderCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public CylinderCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            if (!player.hasPermission("frizzlenedit.block.cylinder")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            if (args.length < 3) {
+                player.sendMessage(ChatColor.RED + "Usage: //cyl <block> <radius> <height> [hollow]");
+                return true;
+            }
+            
+            String blockType = args[0];
+            int radius;
+            int height;
+            boolean hollow = false;
+            
+            try {
+                radius = Integer.parseInt(args[1]);
+                height = Integer.parseInt(args[2]);
+                
+                if (radius <= 0 || height <= 0) {
+                    player.sendMessage(ChatColor.RED + "Radius and height must be positive numbers.");
+                    return true;
+                }
+                
+                if (args.length >= 4 && args[3].equalsIgnoreCase("hollow")) {
+                    hollow = true;
+                }
+            } catch (NumberFormatException e) {
+                player.sendMessage(ChatColor.RED + "Radius and height must be valid numbers.");
+                return true;
+            }
+            
+            // Get the player's location as the center of the cylinder
+            Vector3 center = Vector3.fromLocation(player.getLocation());
+            
+            // Create and execute the operation
+            try {
+                Material material = Material.matchMaterial(blockType);
+                if (material == null) {
+                    player.sendMessage(ChatColor.RED + "Invalid block type: " + blockType);
+                    player.sendMessage(ChatColor.YELLOW + "Common material names: stone, dirt, grass_block, oak_planks, glass, etc.");
+                    return true;
+                }
+                
+                Operation operation = plugin.getOperationManager().createCylinderOperation(player, center, material, radius, height, hollow);
+                plugin.getOperationManager().execute(player, operation);
+            } catch (IllegalArgumentException e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+            }
+            
             return true;
         }
     }

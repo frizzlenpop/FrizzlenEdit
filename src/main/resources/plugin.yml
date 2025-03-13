@@ -10,7 +10,7 @@ commands:
   frizzlenedit:
     description: Main FrizzlenEdit command
     aliases: [fe]
-    usage: /<command> [help|reload|version]
+    usage: /<command> [help|reload|version|prefix]
   
   # Selection Commands
   wand:
@@ -142,6 +142,18 @@ commands:
     permission: frizzlenedit.region.smooth
     aliases: [//smooth]
   
+  drain:
+    description: Remove water or all liquids from the selection
+    usage: //drain [all]
+    permission: frizzlenedit.region.drain
+    aliases: [//drain]
+  
+  cyl:
+    description: Create a cylinder at your position
+    usage: //cyl <block> <radius> <height> [hollow]
+    permission: frizzlenedit.block.cylinder
+    aliases: [//cyl, //cylinder]
+  
   # Brush Commands
   brush:
     description: Set a brush
@@ -164,7 +176,7 @@ commands:
   # Schematic Commands
   schematic:
     description: Schematic management
-    usage: //schematic <save|load|list|delete> <name>
+    usage: //schematic <save|load|list|delete> <n>
     permission: frizzlenedit.schematic
     aliases: [//schematic, //schem]
   
@@ -219,7 +231,8 @@ permissions:
     description: Allows access to administrative commands
     default: op
     children:
-      frizzlenedit.reload: true
+      frizzlenedit.admin.reload: true
+      frizzlenedit.admin.prefix: true
   
   frizzlenedit.selection.*:
     description: Allows all selection commands
@@ -264,3 +277,17 @@ permissions:
       frizzlenedit.schematic.pastelarge: true
       frizzlenedit.schematic.delete: true
       frizzlenedit.schematic.list: true
+
+  frizzlenedit.region.*:
+    description: Allows all region commands
+    default: op
+    children:
+      frizzlenedit.region.set: true
+      frizzlenedit.region.replace: true
+      frizzlenedit.region.fill: true
+      frizzlenedit.region.walls: true
+      frizzlenedit.region.outline: true
+      frizzlenedit.region.hollow: true
+      frizzlenedit.region.smooth: true
+      frizzlenedit.region.drain: true
+      frizzlenedit.block.cylinder: true

@@ -1,11 +1,13 @@
 package org.frizzlenpop.frizzlenEdit.operations;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.frizzlenpop.frizzlenEdit.FrizzlenEdit;
 import org.frizzlenpop.frizzlenEdit.history.HistoryEntry;
 import org.frizzlenpop.frizzlenEdit.selection.Region;
 import org.frizzlenpop.frizzlenEdit.utils.Logger;
+import org.frizzlenpop.frizzlenEdit.utils.Vector3;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -117,6 +119,64 @@ public class OperationManager {
      */
     public Operation createReplaceOperation(Player player, Region region, String fromType, String toType) {
         return new ReplaceOperation(player, region, fromType, toType);
+    }
+    
+    /**
+     * Create a smooth operation.
+     * @param player The player
+     * @param region The region
+     * @param iterations Number of smoothing iterations
+     * @param heightFactor Height factor for vertical smoothing
+     * @return The operation
+     */
+    public Operation createSmoothOperation(Player player, Region region, int iterations, double heightFactor) {
+        return new SmoothOperation(player, region, iterations, heightFactor);
+    }
+    
+    /**
+     * Create a smooth operation with default parameters.
+     * @param player The player
+     * @param region The region
+     * @return The operation
+     */
+    public Operation createSmoothOperation(Player player, Region region) {
+        return new SmoothOperation(player, region);
+    }
+    
+    /**
+     * Create a drain operation to remove water and other liquids.
+     * @param player The player
+     * @param region The region
+     * @param radius The radius (if sphere is used)
+     * @param removeAllLiquids Whether to remove all liquids (including lava) or just water
+     * @return The operation
+     */
+    public Operation createDrainOperation(Player player, Region region, int radius, boolean removeAllLiquids) {
+        return new DrainOperation(player, region, radius, removeAllLiquids);
+    }
+    
+    /**
+     * Create a drain operation with default parameters (water only).
+     * @param player The player
+     * @param region The region
+     * @return The operation
+     */
+    public Operation createDrainOperation(Player player, Region region) {
+        return new DrainOperation(player, region);
+    }
+    
+    /**
+     * Create a cylinder operation.
+     * @param player The player
+     * @param center The center position of the cylinder
+     * @param material The material to use
+     * @param radius The radius of the cylinder
+     * @param height The height of the cylinder
+     * @param hollow Whether the cylinder should be hollow
+     * @return The operation
+     */
+    public Operation createCylinderOperation(Player player, Vector3 center, Material material, int radius, int height, boolean hollow) {
+        return new CylinderOperation(player, center, material, radius, height, hollow);
     }
     
     /**

@@ -194,7 +194,10 @@ public class BrushCommands {
             }
             
             if (args.length < 1) {
-                player.sendMessage(ChatColor.RED + "Usage: //brush smooth <radius>");
+                player.sendMessage(ChatColor.RED + "Usage: //brush smooth <radius> [iterations] [heightFactor]");
+                player.sendMessage(ChatColor.GRAY + "  radius: The radius of the brush");
+                player.sendMessage(ChatColor.GRAY + "  iterations: (Optional) Number of smoothing iterations (default: 4)");
+                player.sendMessage(ChatColor.GRAY + "  heightFactor: (Optional) Height factor for terrain smoothing (default: 2.0)");
                 return true;
             }
             
@@ -217,8 +220,46 @@ public class BrushCommands {
                 return true;
             }
             
+            // Parse the iterations (optional)
+            int iterations = 4; // Default value
+            if (args.length >= 2) {
+                try {
+                    iterations = Integer.parseInt(args[1]);
+                    if (iterations <= 0) {
+                        player.sendMessage(ChatColor.RED + "Iterations must be greater than 0.");
+                        return true;
+                    }
+                    if (iterations > 10) {
+                        player.sendMessage(ChatColor.RED + "Iterations too large. Maximum is 10 to prevent lag.");
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(ChatColor.RED + "Invalid iterations: " + args[1]);
+                    return true;
+                }
+            }
+            
+            // Parse the height factor (optional)
+            double heightFactor = 2.0; // Default value
+            if (args.length >= 3) {
+                try {
+                    heightFactor = Double.parseDouble(args[2]);
+                    if (heightFactor <= 0.0) {
+                        player.sendMessage(ChatColor.RED + "Height factor must be greater than 0.");
+                        return true;
+                    }
+                    if (heightFactor > 5.0) {
+                        player.sendMessage(ChatColor.RED + "Height factor too large. Maximum is 5.0.");
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    player.sendMessage(ChatColor.RED + "Invalid height factor: " + args[2]);
+                    return true;
+                }
+            }
+            
             // Create the brush
-            plugin.getBrushManager().createSmoothBrush(player, radius);
+            plugin.getBrushManager().createSmoothBrush(player, radius, iterations, heightFactor);
             return true;
         }
     }

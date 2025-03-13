@@ -13,6 +13,7 @@ import org.frizzlenpop.frizzlenEdit.utils.Logger;
 import org.frizzlenpop.frizzlenEdit.utils.Vector3;
 import org.frizzlenpop.frizzlenEdit.utils.NBTUtils;
 import org.frizzlenpop.frizzlenEdit.schematic.paste.OptimizedPasteSystem;
+import org.frizzlenpop.frizzlenEdit.utils.ServerPerformanceMonitor;
 
 import java.io.File;
 import java.io.IOException;
@@ -337,9 +338,8 @@ public class SchematicManager {
         }
 
         try {
-            // Load the schematic data
-            Map<String, Object> schematicData = NBTUtils.readSchematic(file);
-            Clipboard clipboard = load(schematicData);
+            // Load the schematic
+            Clipboard clipboard = SchematicFormat.load(file);
             
             if (clipboard == null) {
                 player.sendMessage(ChatColor.RED + "Failed to load schematic data.");
@@ -352,7 +352,7 @@ public class SchematicManager {
             // Create and start the optimized paste operation
             OptimizedPasteSystem pasteSystem = new OptimizedPasteSystem(
                 plugin, player, clipboard, world, origin, noAir, 
-                initialBatchSize, initialDelay, plugin.getServerPerformanceMonitor()
+                initialBatchSize, initialDelay, ServerPerformanceMonitor.getInstance()
             );
             pasteSystem.start();
             

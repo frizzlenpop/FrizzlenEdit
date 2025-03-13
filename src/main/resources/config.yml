@@ -12,6 +12,9 @@ max-brush-size: 30
 # Maximum number of blocks in clipboard (1 million by default)
 clipboard-size-limit: 1000000
 
+# Debug mode - enables additional logging
+debug-mode: false
+
 # Storage type for schematics and history (file or mysql)
 storage-type: file
 
@@ -45,4 +48,9 @@ performance:
 batch-paste-size: 1000
 
 # Number of server ticks to wait between batches (1 tick = 1/20 second)
-batch-paste-delay: 1 
+batch-paste-delay: 1
+
+# Command settings
+commands:
+  # Default command prefix
+  prefix: // 

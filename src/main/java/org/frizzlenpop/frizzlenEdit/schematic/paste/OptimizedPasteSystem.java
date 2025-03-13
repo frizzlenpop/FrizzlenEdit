@@ -10,7 +10,8 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.frizzlenpop.frizzlenEdit.FrizzlenEdit;
 import org.frizzlenpop.frizzlenEdit.clipboard.Clipboard;
-import org.frizzlenpop.frizzlenEdit.monitoring.ServerPerformanceMonitor;
+import org.frizzlenpop.frizzlenEdit.utils.ServerPerformanceMonitor;
+import org.frizzlenpop.frizzlenEdit.utils.Vector3;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -118,18 +119,20 @@ public class OptimizedPasteSystem {
     }
     
     private void prepareAllBlocks() {
-        Vector min = clipboard.getMinimumPoint();
-        Vector max = clipboard.getMaximumPoint();
-        Vector offset = clipboard.getOrigin().clone().multiply(-1);
+        // Create Vector3 objects for min, max and offset
+        Vector3 min = new Vector3(0, 0, 0);
+        Vector3 max = new Vector3(clipboard.getWidth() - 1, clipboard.getHeight() - 1, clipboard.getLength() - 1);
+        Vector3 offset = clipboard.getOrigin().multiply(-1);
         
-        for (int x = min.getBlockX(); x <= max.getBlockX(); x++) {
-            for (int y = min.getBlockY(); y <= max.getBlockY(); y++) {
-                for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
-                    Vector pos = new Vector(x, y, z);
+        // Iterate through clipboard dimensions
+        for (int x = 0; x <= max.getX(); x++) {
+            for (int y = 0; y <= max.getY(); y++) {
+                for (int z = 0; z <= max.getZ(); z++) {
+                    Vector3 pos = new Vector3(x, y, z);
                     BlockData data = clipboard.getBlock(pos);
                     
                     if (data != null && (!noAir || !data.getMaterial().isAir())) {
-                        Vector target = pos.clone().add(offset);
+                        Vector3 target = pos.add(offset);
                         Location location = origin.clone().add(target.getX(), target.getY(), target.getZ());
                         allBlocks.add(new BlockEntry(location, data));
                     }
@@ -189,181 +192,149 @@ public class OptimizedPasteSystem {
             });
         }
         
-        // Submit a completed marker
-        processingPool.submit(() -> {
-            try {
-                processingPool.shutdown();
-                processingPool.awaitTermination(5, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        });
+        // Mark that processing is complete once all batches are done
+        processingPool.shutdown();
     }
     
     private List<List<BlockEntry>> splitIntoBatches(List<BlockEntry> blocks, int batchSize) {
         List<List<BlockEntry>> batches = new ArrayList<>();
-        int totalBlocks = blocks.size();
+        int blockCount = blocks.size();
         
-        for (int i = 0; i < totalBlocks; i += batchSize) {
-            int endIndex = Math.min(i + batchSize, totalBlocks);
-            batches.add(new ArrayList<>(blocks.subList(i, endIndex)));
+        for (int i = 0; i < blockCount; i += batchSize) {
+            batches.add(new ArrayList<>(blocks.subList(i, Math.min(blockCount, i + batchSize))));
         }
         
         return batches;
     }
     
     private void startPasteTask() {
-        final AtomicInteger consecutiveGoodPerformance = new AtomicInteger(0);
-        final AtomicInteger consecutivePoorPerformance = new AtomicInteger(0);
-        final AtomicInteger currentBatchSize = new AtomicInteger(initialBatchSize);
-        final AtomicInteger currentDelay = new AtomicInteger(initialDelay);
         final long startTime = System.currentTimeMillis();
+        int currentDelay = initialDelay;
         
-        Runnable pasteRunnable = new Runnable() {
+        pasteTask = plugin.getServer().getScheduler().runTaskTimer(plugin, new Runnable() {
+            private int consecutiveEmptyPolls = 0;
+            private int currentBatchSize = initialBatchSize;
+            private int currentTickDelay = initialDelay;
+            
             @Override
             public void run() {
                 if (!isRunning.get()) {
-                    pasteTask.cancel();
+                    if (pasteTask != null) {
+                        pasteTask.cancel();
+                    }
                     return;
                 }
                 
-                // Check if we're done
-                if (batchQueue.isEmpty() && (processingPool.isTerminated() || processingPool.isShutdown())) {
+                // Check if processing is complete and queue is empty
+                if (processingPool.isTerminated() && batchQueue.isEmpty() && remainingBlocks.get() == 0) {
                     isRunning.set(false);
-                    pasteTask.cancel();
                     long duration = System.currentTimeMillis() - startTime;
-                    player.sendMessage(String.format("§aPaste completed: %d blocks in %.2f seconds", 
-                                                   blocksPlaced.get(), duration / 1000.0));
+                    player.sendMessage("§aOptimized paste completed in " + (duration / 1000.0) + " seconds.");
+                    
+                    if (pasteTask != null) {
+                        pasteTask.cancel();
+                    }
                     return;
                 }
                 
-                // Get next batch if available
-                OptimizedBatch batch = batchQueue.poll();
-                if (batch == null) {
-                    return; // Wait for next tick
-                }
-                
-                int blocksPastedInThisBatch = 0;
-                
-                // Process this batch by chunks
-                for (Map.Entry<ChunkCoordinate, List<BlockEntry>> entry : batch.blocksByChunk.entrySet()) {
-                    List<BlockEntry> chunkBlocks = entry.getValue();
+                try {
+                    // Adjust batch size and delay based on server performance
+                    adjustBatchSettings();
                     
-                    // Place blocks with physics disabled
-                    for (BlockEntry blockEntry : chunkBlocks) {
-                        Location loc = blockEntry.getLocation();
-                        Block block = loc.getBlock();
-                        BlockData data = blockEntry.getBlockData();
-                        
-                        block.setBlockData(data, false); // No physics updates
-                        blocksPlaced.incrementAndGet();
-                        remainingBlocks.decrementAndGet();
-                        blocksPastedInThisBatch++;
-                    }
+                    // Try to get a batch, but don't block
+                    OptimizedBatch batch = batchQueue.poll();
                     
-                    // Apply deferred physics for this chunk if needed
-                    if (batch.hasPhysicsBlocks) {
-                        applyDeferredPhysics(chunkBlocks);
-                    }
-                }
-                
-                // Update progress for the player
-                updateProgress(player, blocksPlaced.get(), allBlocks.size(), startTime);
-                
-                // Adjust batch size and delay based on performance
-                double performanceFactor = performanceMonitor.getPerformanceFactor();
-                
-                if (performanceFactor > 0.95) {
-                    consecutiveGoodPerformance.incrementAndGet();
-                    consecutivePoorPerformance.set(0);
-                    
-                    // Progressive increase for sustained good performance
-                    if (consecutiveGoodPerformance.get() > 3) {
-                        int newSize = (int)(currentBatchSize.get() * 1.5);
-                        currentBatchSize.set(Math.min(newSize, MAX_BATCH_SIZE));
+                    if (batch == null) {
+                        consecutiveEmptyPolls++;
                         
-                        // Also decrease delay if possible
-                        if (currentDelay.get() > 1) {
-                            currentDelay.decrementAndGet();
-                        }
-                        
-                        consecutiveGoodPerformance.set(0);
-                        
-                        // Log the adaptive adjustment
-                        plugin.getLogger().info("Performance is good. Increasing batch size to " + 
-                                               currentBatchSize.get() + " and setting delay to " + 
-                                               currentDelay.get());
-                        
-                        // Update task delay - fix for rescheduling
-                        if (isRunning.get()) {
-                            pasteTask.cancel();
-                            pasteTask = plugin.getServer().getScheduler().runTaskTimer(plugin, 
-                                this, 0, currentDelay.get());
-                        }
-                    }
-                } else if (performanceFactor < 0.8) {
-                    consecutivePoorPerformance.incrementAndGet();
-                    consecutiveGoodPerformance.set(0);
-                    
-                    // Reduce batch size for poor performance
-                    if (consecutivePoorPerformance.get() > 2) {
-                        int newSize = (int)(currentBatchSize.get() * 0.7);
-                        currentBatchSize.set(Math.max(newSize, MIN_BATCH_SIZE));
-                        
-                        // Increase delay
-                        currentDelay.incrementAndGet();
-                        
-                        consecutivePoorPerformance.set(0);
-                        
-                        // Log the adaptive adjustment
-                        plugin.getLogger().info("Performance is poor. Decreasing batch size to " + 
-                                               currentBatchSize.get() + " and setting delay to " + 
-                                               currentDelay.get());
-                        
-                        // Update task delay - fix for rescheduling
-                        if (isRunning.get()) {
-                            pasteTask.cancel();
-                            pasteTask = plugin.getServer().getScheduler().runTaskTimer(plugin, 
-                                this, 0, currentDelay.get());
-                        }
-                    }
-                }
-                
-                // Fix 3: Avoid concurrent modification when submitting more batches
-                if (!processingPool.isShutdown() && !processingPool.isTerminated() && 
-                    batchQueue.size() < 3 && remainingBlocks.get() > 0) {
-                    
-                    // Create a new list to avoid concurrent modification
-                    List<BlockEntry> remainingBlocksList = new ArrayList<>();
-                    int remainingCount = remainingBlocks.get();
-                    
-                    synchronized (allBlocks) {
-                        // Get the remaining blocks safely
-                        int startIndex = Math.max(0, allBlocks.size() - remainingCount);
-                        for (int i = startIndex; i < allBlocks.size() && remainingBlocksList.size() < currentBatchSize.get(); i++) {
-                            remainingBlocksList.add(allBlocks.get(i));
-                        }
-                    }
-                    
-                    if (!remainingBlocksList.isEmpty()) {
-                        processingPool.submit(() -> {
-                            OptimizedBatch optimizedBatch = prepareOptimizedBatch(remainingBlocksList);
-                            try {
-                                batchQueue.put(optimizedBatch);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
+                        // If we've had many empty polls and processing is done, we're probably finished
+                        if (consecutiveEmptyPolls > 20 && processingPool.isTerminated()) {
+                            if (remainingBlocks.get() <= 0) {
+                                isRunning.set(false);
+                                long duration = System.currentTimeMillis() - startTime;
+                                player.sendMessage("§aOptimized paste completed in " + (duration / 1000.0) + " seconds.");
+                                
+                                if (pasteTask != null) {
+                                    pasteTask.cancel();
+                                }
                             }
-                        });
+                        }
+                        return;
+                    }
+                    
+                    consecutiveEmptyPolls = 0;
+                    
+                    // Process the batch by chunks
+                    int blocksProcessed = 0;
+                    for (Map.Entry<ChunkCoordinate, List<BlockEntry>> entry : batch.blocksByChunk.entrySet()) {
+                        List<BlockEntry> chunkBlocks = entry.getValue();
+                        
+                        // Make sure the chunk is loaded
+                        int chunkX = entry.getKey().x;
+                        int chunkZ = entry.getKey().z;
+                        if (!world.isChunkLoaded(chunkX, chunkZ)) {
+                            world.loadChunk(chunkX, chunkZ);
+                        }
+                        
+                        // Place blocks in this chunk
+                        for (BlockEntry blockEntry : chunkBlocks) {
+                            Block block = blockEntry.getLocation().getBlock();
+                            block.setBlockData(blockEntry.getBlockData(), false);
+                            blocksProcessed++;
+                        }
+                        
+                        // Apply physics updates if needed
+                        if (batch.hasPhysicsBlocks) {
+                            applyDeferredPhysics(chunkBlocks);
+                        }
+                    }
+                    
+                    // Update progress
+                    blocksPlaced.addAndGet(blocksProcessed);
+                    remainingBlocks.addAndGet(-blocksProcessed);
+                    
+                    // Report progress periodically
+                    int totalPlaced = blocksPlaced.get();
+                    int totalBlocks = allBlocks.size();
+                    if (totalPlaced % 5000 < blocksProcessed || totalPlaced == totalBlocks) {
+                        updateProgress(player, totalPlaced, totalBlocks, startTime);
+                    }
+                    
+                } catch (Exception e) {
+                    plugin.getLogger().log(Level.SEVERE, "Error during paste operation", e);
+                    player.sendMessage("§cError during paste: " + e.getMessage());
+                    stop();
+                }
+            }
+            
+            private void adjustBatchSettings() {
+                if (performanceMonitor != null) {
+                    // Adjust based on server performance
+                    double tps = performanceMonitor.getCurrentTps();
+                    
+                    // Dynamically adjust batch size
+                    if (tps > 19.0) {
+                        // Excellent performance, increase batch size
+                        currentBatchSize = Math.min(MAX_BATCH_SIZE, (int)(currentBatchSize * 1.2));
+                        currentTickDelay = Math.max(1, currentTickDelay - 1);
+                    } else if (tps > 17.0) {
+                        // Good performance, slight increase
+                        currentBatchSize = Math.min(MAX_BATCH_SIZE, (int)(currentBatchSize * 1.1));
+                    } else if (tps < 10.0) {
+                        // Very poor performance, dramatically reduce
+                        currentBatchSize = Math.max(MIN_BATCH_SIZE, currentBatchSize / 3);
+                        currentTickDelay = Math.min(10, currentTickDelay + 2);
+                    } else if (tps < 15.0) {
+                        // Poor performance, reduce
+                        currentBatchSize = Math.max(MIN_BATCH_SIZE, (int)(currentBatchSize * 0.7));
+                        currentTickDelay = Math.min(5, currentTickDelay + 1);
                     }
                 }
             }
-        };
-        
-        pasteTask = plugin.getServer().getScheduler().runTaskTimer(plugin, pasteRunnable, initialDelay, currentDelay.get());
+        }, 0L, currentDelay);
     }
     
     private OptimizedBatch prepareOptimizedBatch(List<BlockEntry> blocks) {
-        // Group blocks by chunk
         Map<ChunkCoordinate, List<BlockEntry>> blocksByChunk = new HashMap<>();
         boolean hasPhysicsBlocks = false;
         
@@ -371,77 +342,74 @@ public class OptimizedPasteSystem {
             Location loc = entry.getLocation();
             ChunkCoordinate chunkCoord = new ChunkCoordinate(loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
             
-            if (!blocksByChunk.containsKey(chunkCoord)) {
-                blocksByChunk.put(chunkCoord, new ArrayList<>());
-            }
-            blocksByChunk.get(chunkCoord).add(entry);
+            // Group by chunk
+            blocksByChunk.computeIfAbsent(chunkCoord, k -> new ArrayList<>()).add(entry);
             
-            // Check if this block might need physics updates
-            if (needsPhysicsUpdate(entry.getBlockData())) {
+            // Check if any blocks need physics updates
+            if (!hasPhysicsBlocks && needsPhysicsUpdate(entry.getBlockData())) {
                 hasPhysicsBlocks = true;
             }
-        }
-        
-        // Sort blocks within each chunk by priority
-        for (List<BlockEntry> chunkBlocks : blocksByChunk.values()) {
-            chunkBlocks.sort((a, b) -> {
-                int priorityA = getBlockPriority(a.getBlockData().getMaterial());
-                int priorityB = getBlockPriority(b.getBlockData().getMaterial());
-                return Integer.compare(priorityA, priorityB);
-            });
         }
         
         return new OptimizedBatch(blocksByChunk, hasPhysicsBlocks);
     }
     
     private void applyDeferredPhysics(List<BlockEntry> chunkBlocks) {
-        // Apply physics only to blocks that need it
+        // Apply physics to blocks that need it
         for (BlockEntry entry : chunkBlocks) {
             if (needsPhysicsUpdate(entry.getBlockData())) {
                 Block block = entry.getLocation().getBlock();
+                // Just update the block to trigger physics
                 block.getState().update(true, true);
             }
         }
     }
     
     private boolean needsPhysicsUpdate(BlockData data) {
-        Material material = data.getMaterial();
-        // List of materials that typically need physics updates
-        return material == Material.SAND || material == Material.GRAVEL || 
-               material.name().contains("DOOR") || material.name().contains("BUTTON") ||
-               material.name().contains("PRESSURE_PLATE") || material.name().contains("REDSTONE") ||
-               material == Material.WATER || material == Material.LAVA;
+        Material type = data.getMaterial();
+        return type.hasGravity() 
+            || type == Material.WATER 
+            || type == Material.LAVA
+            || type == Material.REDSTONE_WIRE
+            || type.name().contains("DOOR")
+            || type.name().contains("BUTTON");
     }
     
     private int getBlockPriority(Material material) {
-        // Lower number = higher priority
-        if (material.isSolid() && material.isBlock() && !material.isTransparent()) {
-            return 1; // Solid structure blocks first
-        } else if (material.isSolid() && material.isBlock()) {
-            return 2; // Other solid blocks
-        } else if (material == Material.WATER || material == Material.LAVA) {
-            return 4; // Fluids later
-        } else if (material.isTransparent()) {
-            return 3; // Transparent blocks
+        // Structural blocks first, then solids, then gravity-affected blocks, then everything else
+        if (material.name().contains("COMMAND") || material.name().contains("STRUCTURE")) {
+            return 0; // Special blocks first
+        } else if (material.isSolid() && !material.hasGravity()) {
+            return 1; // Solid blocks next
+        } else if (material.hasGravity()) {
+            return 3; // Gravity blocks later
+        } else {
+            return 2; // Everything else in between
         }
-        return 5; // Everything else
     }
     
     private void updateProgress(Player player, int blocksPlaced, int totalBlocks, long startTime) {
-        if (blocksPlaced % 1000 == 0 || blocksPlaced == totalBlocks) {
-            long duration = System.currentTimeMillis() - startTime;
-            double seconds = duration / 1000.0;
-            double blocksPerSecond = seconds > 0 ? blocksPlaced / seconds : 0;
+        long currentTime = System.currentTimeMillis();
+        double progress = (double) blocksPlaced / totalBlocks;
+        long elapsedTime = currentTime - startTime;
+        
+        // Only calculate estimated time if we've made some progress
+        String timeInfo = "";
+        if (progress > 0.05 && elapsedTime > 1000) {
+            long estimatedTotalTime = (long) (elapsedTime / progress);
+            long remainingTime = estimatedTotalTime - elapsedTime;
             
-            String progressMessage = String.format(
-                "§aPaste progress: §f%d/%d blocks §7(%.1f%%, %.1f blocks/sec)", 
-                blocksPlaced, totalBlocks, 
-                (blocksPlaced * 100.0) / totalBlocks,
-                blocksPerSecond
-            );
-            
-            // Use regular chat message instead of action bar which might not be available in all versions
-            player.sendMessage(progressMessage);
+            // Format remaining time
+            long remainingSeconds = remainingTime / 1000;
+            if (remainingSeconds < 60) {
+                timeInfo = String.format(" (ETA: %ds)", remainingSeconds);
+            } else {
+                timeInfo = String.format(" (ETA: %dm %ds)", remainingSeconds / 60, remainingSeconds % 60);
+            }
         }
+        
+        // Send progress message
+        player.sendMessage(String.format("§aPaste progress: §f%d/%d §7(%.1f%%)%s", 
+                                        blocksPlaced, totalBlocks, progress * 100, timeInfo));
     }
 } 

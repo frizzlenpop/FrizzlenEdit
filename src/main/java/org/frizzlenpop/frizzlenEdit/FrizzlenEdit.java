@@ -11,6 +11,7 @@ import org.frizzlenpop.frizzlenEdit.operations.OperationManager;
 import org.frizzlenpop.frizzlenEdit.brushes.BrushManager;
 import org.frizzlenpop.frizzlenEdit.utils.Logger;
 import org.frizzlenpop.frizzlenEdit.utils.ServerPerformanceMonitor;
+import org.frizzlenpop.frizzlenEdit.utils.CommandPreprocessor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +28,7 @@ public final class FrizzlenEdit extends JavaPlugin {
     private OperationManager operationManager;
     private BrushManager brushManager;
     private ExecutorService asyncExecutor;
+    private CommandPreprocessor commandPreprocessor;
     
     @Override
     public void onEnable() {
@@ -49,10 +51,12 @@ public final class FrizzlenEdit extends JavaPlugin {
         schematicManager = new SchematicManager(this);
         operationManager = new OperationManager(this);
         brushManager = new BrushManager(this);
+        commandPreprocessor = new CommandPreprocessor(this);
         
         // Register event listeners
         getServer().getPluginManager().registerEvents(selectionManager, this);
         getServer().getPluginManager().registerEvents(brushManager, this);
+        getServer().getPluginManager().registerEvents(commandPreprocessor, this);
         
         // Initialize server performance monitor
         ServerPerformanceMonitor.getInstance(this);
@@ -124,6 +128,9 @@ public final class FrizzlenEdit extends JavaPlugin {
         // Register block operation commands
         getCommand("set").setExecutor(new BlockCommands.SetCommand(this));
         getCommand("replace").setExecutor(new BlockCommands.ReplaceCommand(this));
+        getCommand("smooth").setExecutor(new BlockCommands.SmoothCommand(this));
+        getCommand("drain").setExecutor(new BlockCommands.DrainCommand(this));
+        getCommand("cyl").setExecutor(new BlockCommands.CylinderCommand(this));
         
         // Register history commands
         getCommand("undo").setExecutor(new BlockCommands.UndoCommand(this));
@@ -207,5 +214,21 @@ public final class FrizzlenEdit extends JavaPlugin {
     
     public ExecutorService getAsyncExecutor() {
         return asyncExecutor;
+    }
+    
+    /**
+     * Get the command preprocessor.
+     * @return The command preprocessor
+     */
+    public CommandPreprocessor getCommandPreprocessor() {
+        return commandPreprocessor;
+    }
+    
+    /**
+     * Get the server performance monitor.
+     * @return The server performance monitor
+     */
+    public ServerPerformanceMonitor getServerPerformanceMonitor() {
+        return ServerPerformanceMonitor.getInstance();
     }
 }

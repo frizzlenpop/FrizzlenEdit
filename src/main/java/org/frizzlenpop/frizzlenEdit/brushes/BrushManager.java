@@ -145,6 +145,17 @@ public class BrushManager implements Listener {
      * @param radius The radius
      */
     public void createSmoothBrush(Player player, int radius) {
+        createSmoothBrush(player, radius, 4, 2.0);
+    }
+    
+    /**
+     * Create a smooth brush for a player with custom iterations and height factor.
+     * @param player The player
+     * @param radius The radius
+     * @param iterations Number of smoothing iterations (default 4)
+     * @param heightFactor Height weighting factor (default 2.0, higher = more aggressive height smoothing)
+     */
+    public void createSmoothBrush(Player player, int radius, int iterations, double heightFactor) {
         // Check if the radius is too large
         int maxRadius = plugin.getConfigManager().getMaxBrushSize();
         if (radius > maxRadius) {
@@ -153,10 +164,11 @@ public class BrushManager implements Listener {
         }
         
         // Create the brush
-        SmoothBrush brush = new SmoothBrush(plugin, radius);
+        SmoothBrush brush = new SmoothBrush(plugin, radius, iterations, heightFactor);
         setBrush(player, brush);
         
-        player.sendMessage(ChatColor.GREEN + "Smooth brush created with radius " + radius + ".");
+        player.sendMessage(ChatColor.GREEN + "Smooth brush created with radius " + radius + ", " + 
+                          iterations + " iterations, and height factor " + heightFactor + ".");
     }
     
     /**

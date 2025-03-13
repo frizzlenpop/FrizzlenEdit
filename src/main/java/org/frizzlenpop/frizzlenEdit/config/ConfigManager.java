@@ -24,6 +24,8 @@ public class ConfigManager {
     private static final int DEFAULT_CLIPBOARD_SIZE_LIMIT = 1000000; // 1 million blocks
     private static final int DEFAULT_BATCH_PASTE_SIZE = 1000; // 1000 blocks per batch
     private static final int DEFAULT_BATCH_PASTE_DELAY = 1; // 1 tick delay between batches
+    private static final boolean DEFAULT_DEBUG_MODE = false;
+    private static final String DEFAULT_COMMAND_PREFIX = "//";
     
     // Config keys
     public static final String KEY_MAX_SELECTION_BLOCKS = "max-selection-blocks";
@@ -33,6 +35,8 @@ public class ConfigManager {
     public static final String KEY_STORAGE_TYPE = "storage-type"; // "file" or "mysql"
     public static final String KEY_BATCH_PASTE_SIZE = "batch-paste-size";
     public static final String KEY_BATCH_PASTE_DELAY = "batch-paste-delay";
+    public static final String KEY_DEBUG_MODE = "debug-mode";
+    public static final String KEY_COMMAND_PREFIX = "commands.prefix";
     
     public ConfigManager(FrizzlenEdit plugin) {
         this.plugin = plugin;
@@ -51,6 +55,9 @@ public class ConfigManager {
         
         // Save updated config with any new defaults
         plugin.saveConfig();
+        
+        // Set debug mode for logger
+        Logger.setDebugMode(isDebugModeEnabled());
         
         Logger.info("Configuration loaded successfully");
     }
@@ -85,6 +92,14 @@ public class ConfigManager {
         
         if (!config.contains(KEY_BATCH_PASTE_DELAY)) {
             config.set(KEY_BATCH_PASTE_DELAY, DEFAULT_BATCH_PASTE_DELAY);
+        }
+        
+        if (!config.contains(KEY_DEBUG_MODE)) {
+            config.set(KEY_DEBUG_MODE, DEFAULT_DEBUG_MODE);
+        }
+        
+        if (!config.contains(KEY_COMMAND_PREFIX)) {
+            config.set(KEY_COMMAND_PREFIX, DEFAULT_COMMAND_PREFIX);
         }
     }
     
@@ -149,5 +164,21 @@ public class ConfigManager {
      */
     public int getBatchPasteDelay() {
         return config.getInt(KEY_BATCH_PASTE_DELAY, DEFAULT_BATCH_PASTE_DELAY);
+    }
+    
+    /**
+     * Check if debug mode is enabled.
+     * @return True if debug mode is enabled, false otherwise
+     */
+    public boolean isDebugModeEnabled() {
+        return config.getBoolean(KEY_DEBUG_MODE, DEFAULT_DEBUG_MODE);
+    }
+    
+    /**
+     * Get the command prefix for FrizzlenEdit commands.
+     * @return The command prefix
+     */
+    public String getCommandPrefix() {
+        return config.getString(KEY_COMMAND_PREFIX, DEFAULT_COMMAND_PREFIX);
     }
 } 
