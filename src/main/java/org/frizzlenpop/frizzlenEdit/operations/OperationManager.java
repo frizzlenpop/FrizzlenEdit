@@ -122,7 +122,24 @@ public class OperationManager {
     }
     
     /**
-     * Create a smooth operation.
+     * Create a smooth operation with full customization.
+     * @param player The player
+     * @param region The region
+     * @param iterations Number of smoothing iterations
+     * @param heightFactor Height factor for vertical smoothing
+     * @param erodeSteepSlopes Whether to simulate erosion on steep slopes
+     * @param preserveTopLayer Whether to preserve surface materials on top
+     * @param naturalVariation Amount of natural variation (0.0-1.0) to add
+     * @return The operation
+     */
+    public Operation createSmoothOperation(Player player, Region region, int iterations, double heightFactor, 
+                                           boolean erodeSteepSlopes, boolean preserveTopLayer, double naturalVariation) {
+        return new SmoothOperation(player, region, iterations, heightFactor, 
+                                  erodeSteepSlopes, preserveTopLayer, naturalVariation);
+    }
+    
+    /**
+     * Create a smooth operation with custom iterations and height factor.
      * @param player The player
      * @param region The region
      * @param iterations Number of smoothing iterations

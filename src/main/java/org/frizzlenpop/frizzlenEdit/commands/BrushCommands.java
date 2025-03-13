@@ -194,10 +194,14 @@ public class BrushCommands {
             }
             
             if (args.length < 1) {
-                player.sendMessage(ChatColor.RED + "Usage: //brush smooth <radius> [iterations] [heightFactor]");
+                player.sendMessage(ChatColor.RED + "Usage: //brush smooth <radius> [iterations] [heightFactor] [options]");
                 player.sendMessage(ChatColor.GRAY + "  radius: The radius of the brush");
                 player.sendMessage(ChatColor.GRAY + "  iterations: (Optional) Number of smoothing iterations (default: 4)");
                 player.sendMessage(ChatColor.GRAY + "  heightFactor: (Optional) Height factor for terrain smoothing (default: 2.0)");
+                player.sendMessage(ChatColor.GRAY + "  options: (Optional) Additional flags:");
+                player.sendMessage(ChatColor.GRAY + "    -e/+e: Disable/Enable erosion simulation (default: enabled)");
+                player.sendMessage(ChatColor.GRAY + "    -p/+p: Disable/Enable preserving surface layer (default: enabled)");
+                player.sendMessage(ChatColor.GRAY + "    -v=N: Set natural variation (0.0-1.0, default: 0.2)");
                 return true;
             }
             
@@ -222,7 +226,7 @@ public class BrushCommands {
             
             // Parse the iterations (optional)
             int iterations = 4; // Default value
-            if (args.length >= 2) {
+            if (args.length >= 2 && !args[1].startsWith("-") && !args[1].startsWith("+")) {
                 try {
                     iterations = Integer.parseInt(args[1]);
                     if (iterations <= 0) {
@@ -241,7 +245,7 @@ public class BrushCommands {
             
             // Parse the height factor (optional)
             double heightFactor = 2.0; // Default value
-            if (args.length >= 3) {
+            if (args.length >= 3 && !args[2].startsWith("-") && !args[2].startsWith("+")) {
                 try {
                     heightFactor = Double.parseDouble(args[2]);
                     if (heightFactor <= 0.0) {
@@ -258,8 +262,49 @@ public class BrushCommands {
                 }
             }
             
-            // Create the brush
-            plugin.getBrushManager().createSmoothBrush(player, radius, iterations, heightFactor);
+            // Parse options (optional)
+            boolean erodeSteepSlopes = true; // Default enabled
+            boolean preserveTopLayer = true; // Default enabled
+            double naturalVariation = 0.2;   // Default value
+            
+            // Start parsing options from the appropriate argument index
+            int optionStartIdx = 1;
+            if (args.length >= 2 && !args[1].startsWith("-") && !args[1].startsWith("+")) optionStartIdx++;
+            if (args.length >= 3 && !args[2].startsWith("-") && !args[2].startsWith("+")) optionStartIdx++;
+            
+            // Parse all option flags
+            for (int i = optionStartIdx; i < args.length; i++) {
+                String option = args[i].toLowerCase();
+                
+                if (option.equals("-e")) {
+                    erodeSteepSlopes = false;
+                } else if (option.equals("+e")) {
+                    erodeSteepSlopes = true;
+                } else if (option.equals("-p")) {
+                    preserveTopLayer = false;
+                } else if (option.equals("+p")) {
+                    preserveTopLayer = true;
+                } else if (option.startsWith("-v=")) {
+                    try {
+                        String valueStr = option.substring(3);
+                        naturalVariation = Double.parseDouble(valueStr);
+                        if (naturalVariation < 0.0 || naturalVariation > 1.0) {
+                            player.sendMessage(ChatColor.RED + "Variation must be between 0.0 and 1.0.");
+                            return true;
+                        }
+                    } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                        player.sendMessage(ChatColor.RED + "Invalid variation value: " + option);
+                        return true;
+                    }
+                } else {
+                    player.sendMessage(ChatColor.RED + "Unknown option: " + option);
+                    return true;
+                }
+            }
+            
+            // Create the brush with all parameters
+            plugin.getBrushManager().createSmoothBrush(player, radius, iterations, heightFactor, 
+                                                      erodeSteepSlopes, preserveTopLayer, naturalVariation);
             return true;
         }
     }

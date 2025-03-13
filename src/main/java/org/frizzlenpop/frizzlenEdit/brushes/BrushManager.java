@@ -145,7 +145,7 @@ public class BrushManager implements Listener {
      * @param radius The radius
      */
     public void createSmoothBrush(Player player, int radius) {
-        createSmoothBrush(player, radius, 4, 2.0);
+        createSmoothBrush(player, radius, 4, 2.0, true, true, 0.2);
     }
     
     /**
@@ -156,6 +156,21 @@ public class BrushManager implements Listener {
      * @param heightFactor Height weighting factor (default 2.0, higher = more aggressive height smoothing)
      */
     public void createSmoothBrush(Player player, int radius, int iterations, double heightFactor) {
+        createSmoothBrush(player, radius, iterations, heightFactor, true, true, 0.2);
+    }
+    
+    /**
+     * Create an enhanced smooth brush for a player with full customization.
+     * @param player The player
+     * @param radius The radius
+     * @param iterations Number of smoothing iterations (default 4)
+     * @param heightFactor Height weighting factor (default 2.0, higher = more aggressive height smoothing)
+     * @param erodeSteepSlopes Whether to simulate erosion on steep slopes
+     * @param preserveTopLayer Whether to preserve surface materials on top
+     * @param naturalVariation Amount of natural variation (0.0-1.0) to add
+     */
+    public void createSmoothBrush(Player player, int radius, int iterations, double heightFactor, 
+                                 boolean erodeSteepSlopes, boolean preserveTopLayer, double naturalVariation) {
         // Check if the radius is too large
         int maxRadius = plugin.getConfigManager().getMaxBrushSize();
         if (radius > maxRadius) {
@@ -164,11 +179,15 @@ public class BrushManager implements Listener {
         }
         
         // Create the brush
-        SmoothBrush brush = new SmoothBrush(plugin, radius, iterations, heightFactor);
+        SmoothBrush brush = new SmoothBrush(plugin, radius, iterations, heightFactor, 
+                                           erodeSteepSlopes, preserveTopLayer, naturalVariation);
         setBrush(player, brush);
         
-        player.sendMessage(ChatColor.GREEN + "Smooth brush created with radius " + radius + ", " + 
-                          iterations + " iterations, and height factor " + heightFactor + ".");
+        player.sendMessage(ChatColor.GREEN + "Enhanced smooth brush created with radius " + radius + 
+                          ", " + iterations + " iterations, height factor " + heightFactor + 
+                          (erodeSteepSlopes ? ", with erosion" : "") + 
+                          (preserveTopLayer ? ", preserving surface" : "") +
+                          ", and " + String.format("%.1f", naturalVariation*100) + "% natural variation.");
     }
     
     /**
