@@ -8,6 +8,8 @@ import org.frizzlenpop.frizzlenEdit.history.HistoryEntry;
 import org.frizzlenpop.frizzlenEdit.selection.Region;
 import org.frizzlenpop.frizzlenEdit.utils.Logger;
 import org.frizzlenpop.frizzlenEdit.utils.Vector3;
+import org.frizzlenpop.frizzlenEdit.patterns.Pattern;
+import org.frizzlenpop.frizzlenEdit.masks.Mask;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -215,6 +217,480 @@ public class OperationManager {
      */
     public Operation createRemoveNearOperation(Player player, int radius) {
         return new RemoveNearOperation(player, radius);
+    }
+    
+    /**
+     * Create a sphere operation.
+     * @param player The player
+     * @param center The center position of the sphere
+     * @param pattern The pattern to use
+     * @param radius The radius of the sphere
+     * @param hollow Whether the sphere should be hollow
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createSphereOperation(Player player, Vector3 center, Pattern pattern, int radius, boolean hollow, Mask mask) {
+        return new SphereOperation(player, center, radius, pattern, hollow, mask);
+    }
+    
+    /**
+     * Create a sphere operation.
+     * @param player The player
+     * @param center The center position of the sphere
+     * @param pattern The pattern to use
+     * @param radius The radius of the sphere
+     * @param hollow Whether the sphere should be hollow
+     * @return The operation
+     */
+    public Operation createSphereOperation(Player player, Vector3 center, Pattern pattern, int radius, boolean hollow) {
+        return new SphereOperation(player, center, radius, pattern, hollow);
+    }
+    
+    /**
+     * Create a sphere operation with a material.
+     * @param player The player
+     * @param center The center position of the sphere
+     * @param material The material to use
+     * @param radius The radius of the sphere
+     * @param hollow Whether the sphere should be hollow
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createSphereOperation(Player player, Vector3 center, Material material, int radius, boolean hollow, Mask mask) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new SphereOperation(player, center, radius, pattern, hollow, mask);
+    }
+    
+    /**
+     * Create a sphere operation with a material.
+     * @param player The player
+     * @param center The center position of the sphere
+     * @param material The material to use
+     * @param radius The radius of the sphere
+     * @param hollow Whether the sphere should be hollow
+     * @return The operation
+     */
+    public Operation createSphereOperation(Player player, Vector3 center, Material material, int radius, boolean hollow) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new SphereOperation(player, center, radius, pattern, hollow);
+    }
+    
+    /**
+     * Create a pyramid operation.
+     * @param player The player
+     * @param base The base center point of the pyramid
+     * @param pattern The pattern to use
+     * @param size The size (width) of the pyramid
+     * @param hollow Whether the pyramid should be hollow
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createPyramidOperation(Player player, Vector3 base, Pattern pattern, int size, boolean hollow, Mask mask) {
+        return new PyramidOperation(player, base, size, pattern, hollow, mask);
+    }
+    
+    /**
+     * Create a pyramid operation.
+     * @param player The player
+     * @param base The base center point of the pyramid
+     * @param pattern The pattern to use
+     * @param size The size (width) of the pyramid
+     * @param hollow Whether the pyramid should be hollow
+     * @return The operation
+     */
+    public Operation createPyramidOperation(Player player, Vector3 base, Pattern pattern, int size, boolean hollow) {
+        return new PyramidOperation(player, base, size, pattern, hollow);
+    }
+    
+    /**
+     * Create a pyramid operation with a material.
+     * @param player The player
+     * @param base The base center point of the pyramid
+     * @param material The material to use
+     * @param size The size (width) of the pyramid
+     * @param hollow Whether the pyramid should be hollow
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createPyramidOperation(Player player, Vector3 base, Material material, int size, boolean hollow, Mask mask) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new PyramidOperation(player, base, size, pattern, hollow, mask);
+    }
+    
+    /**
+     * Create a pyramid operation with a material.
+     * @param player The player
+     * @param base The base center point of the pyramid
+     * @param material The material to use
+     * @param size The size (width) of the pyramid
+     * @param hollow Whether the pyramid should be hollow
+     * @return The operation
+     */
+    public Operation createPyramidOperation(Player player, Vector3 base, Material material, int size, boolean hollow) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new PyramidOperation(player, base, size, pattern, hollow);
+    }
+    
+    /**
+     * Create a fill operation.
+     * @param player The player executing the operation
+     * @param region The region to fill
+     * @param pattern The pattern to use for filling
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createFillOperation(Player player, Region region, Pattern pattern, Mask mask) {
+        return new FillOperation(player, region, pattern, mask);
+    }
+    
+    /**
+     * Create a fill operation.
+     * @param player The player executing the operation
+     * @param region The region to fill
+     * @param pattern The pattern to use for filling
+     * @return The operation
+     */
+    public Operation createFillOperation(Player player, Region region, Pattern pattern) {
+        return new FillOperation(player, region, pattern);
+    }
+    
+    /**
+     * Create a fill operation with a material.
+     * @param player The player executing the operation
+     * @param region The region to fill
+     * @param material The material to use for filling
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createFillOperation(Player player, Region region, Material material, Mask mask) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new FillOperation(player, region, pattern, mask);
+    }
+    
+    /**
+     * Create a fill operation with a material.
+     * @param player The player executing the operation
+     * @param region The region to fill
+     * @param material The material to use for filling
+     * @return The operation
+     */
+    public Operation createFillOperation(Player player, Region region, Material material) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new FillOperation(player, region, pattern);
+    }
+    
+    /**
+     * Create a walls operation.
+     * @param player The player executing the operation
+     * @param region The region around which to create walls
+     * @param pattern The pattern to use for the walls
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createWallsOperation(Player player, Region region, Pattern pattern, Mask mask) {
+        return new WallsOperation(player, region, pattern, mask);
+    }
+    
+    /**
+     * Create a walls operation.
+     * @param player The player executing the operation
+     * @param region The region around which to create walls
+     * @param pattern The pattern to use for the walls
+     * @return The operation
+     */
+    public Operation createWallsOperation(Player player, Region region, Pattern pattern) {
+        return new WallsOperation(player, region, pattern);
+    }
+    
+    /**
+     * Create a walls operation with a material.
+     * @param player The player executing the operation
+     * @param region The region around which to create walls
+     * @param material The material to use for the walls
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createWallsOperation(Player player, Region region, Material material, Mask mask) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new WallsOperation(player, region, pattern, mask);
+    }
+    
+    /**
+     * Create a walls operation with a material.
+     * @param player The player executing the operation
+     * @param region The region around which to create walls
+     * @param material The material to use for the walls
+     * @return The operation
+     */
+    public Operation createWallsOperation(Player player, Region region, Material material) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new WallsOperation(player, region, pattern);
+    }
+    
+    /**
+     * Create an outline operation.
+     * @param player The player executing the operation
+     * @param region The region to outline
+     * @param pattern The pattern to use for the outline
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createOutlineOperation(Player player, Region region, Pattern pattern, Mask mask) {
+        return new OutlineOperation(player, region, pattern, mask);
+    }
+    
+    /**
+     * Create an outline operation.
+     * @param player The player executing the operation
+     * @param region The region to outline
+     * @param pattern The pattern to use for the outline
+     * @return The operation
+     */
+    public Operation createOutlineOperation(Player player, Region region, Pattern pattern) {
+        return new OutlineOperation(player, region, pattern);
+    }
+    
+    /**
+     * Create an outline operation with a material.
+     * @param player The player executing the operation
+     * @param region The region to outline
+     * @param material The material to use for the outline
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createOutlineOperation(Player player, Region region, Material material, Mask mask) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new OutlineOperation(player, region, pattern, mask);
+    }
+    
+    /**
+     * Create an outline operation with a material.
+     * @param player The player executing the operation
+     * @param region The region to outline
+     * @param material The material to use for the outline
+     * @return The operation
+     */
+    public Operation createOutlineOperation(Player player, Region region, Material material) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new OutlineOperation(player, region, pattern);
+    }
+    
+    /**
+     * Create a hollow operation with optional pattern for the shell.
+     * @param player The player executing the operation
+     * @param region The region to make hollow
+     * @param shellPattern The pattern to use for the shell (null to keep original blocks)
+     * @param thickness The thickness of the shell in blocks
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createHollowOperation(Player player, Region region, Pattern shellPattern, int thickness, Mask mask) {
+        return new HollowOperation(player, region, shellPattern, thickness, mask);
+    }
+    
+    /**
+     * Create a hollow operation with optional pattern for the shell.
+     * @param player The player executing the operation
+     * @param region The region to make hollow
+     * @param shellPattern The pattern to use for the shell (null to keep original blocks)
+     * @param thickness The thickness of the shell in blocks
+     * @return The operation
+     */
+    public Operation createHollowOperation(Player player, Region region, Pattern shellPattern, int thickness) {
+        return new HollowOperation(player, region, shellPattern, thickness);
+    }
+    
+    /**
+     * Create a hollow operation with a material for the shell.
+     * @param player The player executing the operation
+     * @param region The region to make hollow
+     * @param shellMaterial The material to use for the shell
+     * @param thickness The thickness of the shell in blocks
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createHollowOperation(Player player, Region region, Material shellMaterial, int thickness, Mask mask) {
+        Pattern shellPattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(shellMaterial.name().toLowerCase());
+        return new HollowOperation(player, region, shellPattern, thickness, mask);
+    }
+    
+    /**
+     * Create a hollow operation with a material for the shell.
+     * @param player The player executing the operation
+     * @param region The region to make hollow
+     * @param shellMaterial The material to use for the shell
+     * @param thickness The thickness of the shell in blocks
+     * @return The operation
+     */
+    public Operation createHollowOperation(Player player, Region region, Material shellMaterial, int thickness) {
+        Pattern shellPattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(shellMaterial.name().toLowerCase());
+        return new HollowOperation(player, region, shellPattern, thickness);
+    }
+    
+    /**
+     * Create a hollow operation that keeps the original shell blocks.
+     * @param player The player executing the operation
+     * @param region The region to make hollow
+     * @param thickness The thickness of the shell in blocks
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createHollowOperation(Player player, Region region, int thickness, Mask mask) {
+        return new HollowOperation(player, region, null, thickness, mask);
+    }
+    
+    /**
+     * Create a hollow operation that keeps the original shell blocks.
+     * @param player The player executing the operation
+     * @param region The region to make hollow
+     * @param thickness The thickness of the shell in blocks
+     * @return The operation
+     */
+    public Operation createHollowOperation(Player player, Region region, int thickness) {
+        return new HollowOperation(player, region, null, thickness);
+    }
+    
+    /**
+     * Create a naturalize operation.
+     * @param player The player executing the operation
+     * @param region The region to naturalize
+     * @param preserveWater Whether to preserve water bodies
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createNaturalizeOperation(Player player, Region region, boolean preserveWater, Mask mask) {
+        return new NaturalizeOperation(player, region, preserveWater, mask);
+    }
+    
+    /**
+     * Create a naturalize operation.
+     * @param player The player executing the operation
+     * @param region The region to naturalize
+     * @param preserveWater Whether to preserve water bodies
+     * @return The operation
+     */
+    public Operation createNaturalizeOperation(Player player, Region region, boolean preserveWater) {
+        return new NaturalizeOperation(player, region, preserveWater);
+    }
+    
+    /**
+     * Create an overlay operation.
+     * @param player The player executing the operation
+     * @param region The region to overlay
+     * @param pattern The pattern to use for the overlay
+     * @param thickness The thickness of the overlay in blocks
+     * @param ignoreWater Whether to ignore water when adding the overlay
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createOverlayOperation(Player player, Region region, Pattern pattern, int thickness, boolean ignoreWater, Mask mask) {
+        return new OverlayOperation(player, region, pattern, thickness, ignoreWater, mask);
+    }
+    
+    /**
+     * Create an overlay operation.
+     * @param player The player executing the operation
+     * @param region The region to overlay
+     * @param pattern The pattern to use for the overlay
+     * @param thickness The thickness of the overlay in blocks
+     * @param ignoreWater Whether to ignore water when adding the overlay
+     * @return The operation
+     */
+    public Operation createOverlayOperation(Player player, Region region, Pattern pattern, int thickness, boolean ignoreWater) {
+        return new OverlayOperation(player, region, pattern, thickness, ignoreWater);
+    }
+    
+    /**
+     * Create an overlay operation with a material.
+     * @param player The player executing the operation
+     * @param region The region to overlay
+     * @param material The material to use for the overlay
+     * @param thickness The thickness of the overlay in blocks
+     * @param ignoreWater Whether to ignore water when adding the overlay
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createOverlayOperation(Player player, Region region, Material material, int thickness, boolean ignoreWater, Mask mask) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new OverlayOperation(player, region, pattern, thickness, ignoreWater, mask);
+    }
+    
+    /**
+     * Create an overlay operation with a material.
+     * @param player The player executing the operation
+     * @param region The region to overlay
+     * @param material The material to use for the overlay
+     * @param thickness The thickness of the overlay in blocks
+     * @param ignoreWater Whether to ignore water when adding the overlay
+     * @return The operation
+     */
+    public Operation createOverlayOperation(Player player, Region region, Material material, int thickness, boolean ignoreWater) {
+        Pattern pattern = new org.frizzlenpop.frizzlenEdit.patterns.SingleBlockPattern(material.name().toLowerCase());
+        return new OverlayOperation(player, region, pattern, thickness, ignoreWater);
+    }
+    
+    /**
+     * Create a caves operation with custom settings.
+     * @param player The player executing the operation
+     * @param region The region in which to generate caves
+     * @param threshold The noise threshold for cave generation (0.0-1.0, higher = more open space)
+     * @param scale The scale of the noise (smaller = larger caves)
+     * @param addOres Whether to add ores to the cave walls
+     * @param oreFrequency The frequency of ore generation (0.0-1.0)
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createCavesOperation(Player player, Region region, double threshold, double scale, 
+                                         boolean addOres, double oreFrequency, Mask mask) {
+        return new CavesOperation(player, region, threshold, scale, addOres, oreFrequency, mask);
+    }
+    
+    /**
+     * Create a caves operation with custom settings.
+     * @param player The player executing the operation
+     * @param region The region in which to generate caves
+     * @param threshold The noise threshold for cave generation (0.0-1.0, higher = more open space)
+     * @param scale The scale of the noise (smaller = larger caves)
+     * @param addOres Whether to add ores to the cave walls
+     * @param oreFrequency The frequency of ore generation (0.0-1.0)
+     * @return The operation
+     */
+    public Operation createCavesOperation(Player player, Region region, double threshold, double scale, 
+                                         boolean addOres, double oreFrequency) {
+        return new CavesOperation(player, region, threshold, scale, addOres, oreFrequency);
+    }
+    
+    /**
+     * Create a caves operation with default settings.
+     * @param player The player executing the operation
+     * @param region The region in which to generate caves
+     * @param mask Optional mask to apply
+     * @return The operation
+     */
+    public Operation createCavesOperation(Player player, Region region, Mask mask) {
+        return new CavesOperation(player, region, 0.4, 0.03, true, 0.1, mask);
+    }
+    
+    /**
+     * Create a caves operation with default settings.
+     * @param player The player executing the operation
+     * @param region The region in which to generate caves
+     * @return The operation
+     */
+    public Operation createCavesOperation(Player player, Region region) {
+        return new CavesOperation(player, region);
+    }
+    
+    /**
+     * Create a chunk regeneration operation.
+     * @param player The player executing the operation
+     * @param region The region containing chunks to regenerate
+     * @param keepEntities Whether to preserve entities in the regenerated chunks
+     * @param keepStructures Whether to preserve structures in the regenerated chunks
+     * @return The operation
+     */
+    public Operation createChunkRegenerationOperation(Player player, Region region, boolean keepEntities, boolean keepStructures) {
+        return new ChunkRegenerationOperation(player, region, keepEntities, keepStructures, plugin);
     }
     
     /**

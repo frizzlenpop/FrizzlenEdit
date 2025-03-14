@@ -1,16 +1,29 @@
 package org.frizzlenpop.frizzlenEdit.commands;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.frizzlenpop.frizzlenEdit.FrizzlenEdit;
+import org.frizzlenpop.frizzlenEdit.history.HistoryEntry;
 import org.frizzlenpop.frizzlenEdit.operations.Operation;
+import org.frizzlenpop.frizzlenEdit.patterns.Pattern;
+import org.frizzlenpop.frizzlenEdit.patterns.PatternFactory;
+import org.frizzlenpop.frizzlenEdit.masks.Mask;
+import org.frizzlenpop.frizzlenEdit.masks.MaskFactory;
 import org.frizzlenpop.frizzlenEdit.selection.Region;
-import org.bukkit.Material;
-import org.bukkit.util.Vector;
+import org.frizzlenpop.frizzlenEdit.utils.Logger;
 import org.frizzlenpop.frizzlenEdit.utils.Vector3;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Handles block manipulation commands.
@@ -641,6 +654,791 @@ public class BlockCommands {
             }
             
             plugin.getOperationManager().execute(player, operation);
+            
+            return true;
+        }
+    }
+    
+    /**
+     * Command for filling a region with a pattern.
+     */
+    public static class FillCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public FillCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.region.fill")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            // Check arguments
+            if (args.length < 1) {
+                player.sendMessage(ChatColor.YELLOW + "Usage: //fill <pattern> [mask:<mask>]");
+                return true;
+            }
+            
+            try {
+                // Get the pattern
+                String patternStr = args[0];
+                Pattern pattern;
+                
+                try {
+                    pattern = PatternFactory.parsePattern(player, patternStr);
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(ChatColor.RED + e.getMessage());
+                    return true;
+                }
+                
+                // Parse mask if provided
+                Mask mask = null;
+                
+                for (int i = 1; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.startsWith("mask:")) {
+                        // Extract the mask string after "mask:"
+                        String maskStr = arg.substring(5);
+                        try {
+                            mask = MaskFactory.parseMask(player, maskStr);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                            return true;
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (mask != null) {
+                    operation = plugin.getOperationManager().createFillOperation(player, region, pattern, mask);
+                } else {
+                    operation = plugin.getOperationManager().createFillOperation(player, region, pattern);
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for creating walls around a region.
+     */
+    public static class WallsCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public WallsCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.region.walls")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            // Check arguments
+            if (args.length < 1) {
+                player.sendMessage(ChatColor.YELLOW + "Usage: //walls <pattern> [mask:<mask>]");
+                return true;
+            }
+            
+            try {
+                // Get the pattern
+                String patternStr = args[0];
+                Pattern pattern;
+                
+                try {
+                    pattern = PatternFactory.parsePattern(player, patternStr);
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(ChatColor.RED + e.getMessage());
+                    return true;
+                }
+                
+                // Parse mask if provided
+                Mask mask = null;
+                
+                for (int i = 1; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.startsWith("mask:")) {
+                        // Extract the mask string after "mask:"
+                        String maskStr = arg.substring(5);
+                        try {
+                            mask = MaskFactory.parseMask(player, maskStr);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                            return true;
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (mask != null) {
+                    operation = plugin.getOperationManager().createWallsOperation(player, region, pattern, mask);
+                } else {
+                    operation = plugin.getOperationManager().createWallsOperation(player, region, pattern);
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for creating an outline around a region.
+     */
+    public static class OutlineCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public OutlineCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.region.outline")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            // Check arguments
+            if (args.length < 1) {
+                player.sendMessage(ChatColor.YELLOW + "Usage: //outline <pattern> [mask:<mask>]");
+                return true;
+            }
+            
+            try {
+                // Get the pattern
+                String patternStr = args[0];
+                Pattern pattern;
+                
+                try {
+                    pattern = PatternFactory.parsePattern(player, patternStr);
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(ChatColor.RED + e.getMessage());
+                    return true;
+                }
+                
+                // Parse mask if provided
+                Mask mask = null;
+                
+                for (int i = 1; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.startsWith("mask:")) {
+                        // Extract the mask string after "mask:"
+                        String maskStr = arg.substring(5);
+                        try {
+                            mask = MaskFactory.parseMask(player, maskStr);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                            return true;
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (mask != null) {
+                    operation = plugin.getOperationManager().createOutlineOperation(player, region, pattern, mask);
+                } else {
+                    operation = plugin.getOperationManager().createOutlineOperation(player, region, pattern);
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for making a region hollow.
+     */
+    public static class HollowCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public HollowCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.region.hollow")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            try {
+                // Default values
+                Pattern shellPattern = null;
+                int thickness = 1;
+                Mask mask = null;
+                
+                // Parse arguments
+                if (args.length > 0) {
+                    // First argument could be pattern or thickness
+                    String firstArg = args[0];
+                    if (firstArg.matches("\\d+")) {
+                        // It's a thickness
+                        thickness = Integer.parseInt(firstArg);
+                        if (thickness <= 0) {
+                            player.sendMessage(ChatColor.RED + "Thickness must be greater than 0.");
+                            return true;
+                        }
+                    } else {
+                        // It's a pattern
+                        try {
+                            shellPattern = PatternFactory.parsePattern(player, firstArg);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + e.getMessage());
+                            return true;
+                        }
+                        
+                        // Second argument could be thickness
+                        if (args.length > 1 && args[1].matches("\\d+")) {
+                            thickness = Integer.parseInt(args[1]);
+                            if (thickness <= 0) {
+                                player.sendMessage(ChatColor.RED + "Thickness must be greater than 0.");
+                                return true;
+                            }
+                        }
+                    }
+                    
+                    // Check for mask
+                    for (String arg : args) {
+                        if (arg.startsWith("mask:")) {
+                            // Extract the mask string after "mask:"
+                            String maskStr = arg.substring(5);
+                            try {
+                                mask = MaskFactory.parseMask(player, maskStr);
+                            } catch (IllegalArgumentException e) {
+                                player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                                return true;
+                            }
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (shellPattern != null) {
+                    if (mask != null) {
+                        operation = plugin.getOperationManager().createHollowOperation(player, region, shellPattern, thickness, mask);
+                    } else {
+                        operation = plugin.getOperationManager().createHollowOperation(player, region, shellPattern, thickness);
+                    }
+                } else {
+                    if (mask != null) {
+                        operation = plugin.getOperationManager().createHollowOperation(player, region, thickness, mask);
+                    } else {
+                        operation = plugin.getOperationManager().createHollowOperation(player, region, thickness);
+                    }
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for naturalizing terrain.
+     */
+    public static class NaturalizeCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public NaturalizeCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.terraforming.naturalize")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            try {
+                // Default value
+                boolean preserveWater = true;
+                Mask mask = null;
+                
+                // Parse arguments
+                for (int i = 0; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.equals("nowater")) {
+                        preserveWater = false;
+                    } else if (arg.startsWith("mask:")) {
+                        // Extract the mask string after "mask:"
+                        String maskStr = arg.substring(5);
+                        try {
+                            mask = MaskFactory.parseMask(player, maskStr);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                            return true;
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (mask != null) {
+                    operation = plugin.getOperationManager().createNaturalizeOperation(player, region, preserveWater, mask);
+                } else {
+                    operation = plugin.getOperationManager().createNaturalizeOperation(player, region, preserveWater);
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for adding an overlay on top of terrain.
+     */
+    public static class OverlayCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public OverlayCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.terraforming.overlay")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            // Check arguments
+            if (args.length < 1) {
+                player.sendMessage(ChatColor.YELLOW + "Usage: //overlay <pattern> [thickness] [ignorewater] [mask:<mask>]");
+                return true;
+            }
+            
+            try {
+                // Get the pattern
+                String patternStr = args[0];
+                Pattern pattern;
+                
+                try {
+                    pattern = PatternFactory.parsePattern(player, patternStr);
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(ChatColor.RED + e.getMessage());
+                    return true;
+                }
+                
+                // Default values
+                int thickness = 1;
+                boolean ignoreWater = false;
+                Mask mask = null;
+                
+                // Parse additional arguments
+                for (int i = 1; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.matches("\\d+")) {
+                        // It's a thickness
+                        thickness = Integer.parseInt(arg);
+                        if (thickness <= 0) {
+                            player.sendMessage(ChatColor.RED + "Thickness must be greater than 0.");
+                            return true;
+                        }
+                    } else if (arg.equals("ignorewater")) {
+                        ignoreWater = true;
+                    } else if (arg.startsWith("mask:")) {
+                        // Extract the mask string after "mask:"
+                        String maskStr = arg.substring(5);
+                        try {
+                            mask = MaskFactory.parseMask(player, maskStr);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                            return true;
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (mask != null) {
+                    operation = plugin.getOperationManager().createOverlayOperation(player, region, pattern, thickness, ignoreWater, mask);
+                } else {
+                    operation = plugin.getOperationManager().createOverlayOperation(player, region, pattern, thickness, ignoreWater);
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for generating caves.
+     */
+    public static class CavesCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public CavesCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.terraforming.caves")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            try {
+                // Default values
+                double threshold = 0.4;
+                double scale = 0.03;
+                boolean addOres = true;
+                double oreFrequency = 0.1;
+                Mask mask = null;
+                
+                // Parse arguments
+                for (int i = 0; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.startsWith("threshold:")) {
+                        try {
+                            threshold = Double.parseDouble(arg.substring(10));
+                            if (threshold < 0.1 || threshold > 0.9) {
+                                player.sendMessage(ChatColor.RED + "Threshold must be between 0.1 and 0.9.");
+                                return true;
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid threshold value.");
+                            return true;
+                        }
+                    } else if (arg.startsWith("scale:")) {
+                        try {
+                            scale = Double.parseDouble(arg.substring(6));
+                            if (scale < 0.01 || scale > 0.1) {
+                                player.sendMessage(ChatColor.RED + "Scale must be between 0.01 and 0.1.");
+                                return true;
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid scale value.");
+                            return true;
+                        }
+                    } else if (arg.equals("noores")) {
+                        addOres = false;
+                    } else if (arg.startsWith("ores:")) {
+                        try {
+                            oreFrequency = Double.parseDouble(arg.substring(5));
+                            if (oreFrequency < 0.0 || oreFrequency > 0.5) {
+                                player.sendMessage(ChatColor.RED + "Ore frequency must be between 0.0 and 0.5.");
+                                return true;
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid ore frequency value.");
+                            return true;
+                        }
+                    } else if (arg.startsWith("mask:")) {
+                        // Extract the mask string after "mask:"
+                        String maskStr = arg.substring(5);
+                        try {
+                            mask = MaskFactory.parseMask(player, maskStr);
+                        } catch (IllegalArgumentException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid mask: " + e.getMessage());
+                            return true;
+                        }
+                    }
+                }
+                
+                // Create the operation
+                Operation operation;
+                if (mask != null) {
+                    operation = plugin.getOperationManager().createCavesOperation(player, region, threshold, scale, addOres, oreFrequency, mask);
+                } else {
+                    operation = plugin.getOperationManager().createCavesOperation(player, region, threshold, scale, addOres, oreFrequency);
+                }
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for regenerating chunks.
+     */
+    public static class RegenCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public RegenCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.chunk.regen")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
+            
+            try {
+                // Default values
+                boolean keepEntities = false;
+                boolean keepStructures = false;
+                
+                // Parse arguments
+                for (int i = 0; i < args.length; i++) {
+                    String arg = args[i].toLowerCase();
+                    
+                    if (arg.equals("keepentities")) {
+                        keepEntities = true;
+                    } else if (arg.equals("keepstructures")) {
+                        keepStructures = true;
+                    }
+                }
+                
+                // Count chunks
+                Vector3 min = region.getMinimumPoint();
+                Vector3 max = region.getMaximumPoint();
+                int minChunkX = min.getX() >> 4;
+                int minChunkZ = min.getZ() >> 4;
+                int maxChunkX = max.getX() >> 4;
+                int maxChunkZ = max.getZ() >> 4;
+                int chunkCount = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
+                
+                // Confirm with the user if many chunks are affected
+                if (chunkCount > 9 && args.length == 0) {
+                    player.sendMessage(ChatColor.YELLOW + "You are about to regenerate " + chunkCount + " chunks.");
+                    player.sendMessage(ChatColor.YELLOW + "This may take a while and cannot be undone.");
+                    player.sendMessage(ChatColor.YELLOW + "To confirm, use: //regen confirm");
+                    return true;
+                }
+                
+                // Check for confirmation
+                if (chunkCount > 9 && !args[0].equalsIgnoreCase("confirm")) {
+                    player.sendMessage(ChatColor.YELLOW + "You are about to regenerate " + chunkCount + " chunks.");
+                    player.sendMessage(ChatColor.YELLOW + "This may take a while and cannot be undone.");
+                    player.sendMessage(ChatColor.YELLOW + "To confirm, use: //regen confirm");
+                    return true;
+                }
+                
+                // Create the operation
+                Operation operation = plugin.getOperationManager().createChunkRegenerationOperation(player, region, keepEntities, keepStructures);
+                
+                // Execute the operation
+                plugin.getOperationManager().execute(player, operation);
+                
+                return true;
+            } catch (Exception e) {
+                player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                e.printStackTrace();
+                return true;
+            }
+        }
+    }
+    
+    /**
+     * Command for showing chunk information.
+     */
+    public static class ShowChunkInfoCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public ShowChunkInfoCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            // Check permission
+            if (!player.hasPermission("frizzlenedit.chunk.info")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Check if selection exists
+            Region region = plugin.getSelectionManager().getSelection(player);
+            if (region == null) {
+                player.sendMessage(ChatColor.RED + "Please make a selection first.");
+                return true;
+            }
             
             return true;
         }

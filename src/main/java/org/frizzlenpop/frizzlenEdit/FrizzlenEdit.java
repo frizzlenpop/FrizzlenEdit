@@ -51,6 +51,14 @@ public final class FrizzlenEdit extends JavaPlugin {
         schematicManager = new SchematicManager(this);
         operationManager = new OperationManager(this);
         brushManager = new BrushManager(this);
+        
+        // Initialize pattern factory
+        org.frizzlenpop.frizzlenEdit.patterns.PatternFactory.init(this);
+        
+        // Initialize mask factory
+        org.frizzlenpop.frizzlenEdit.masks.MaskFactory.init(this);
+        
+        // Register command preprocessor
         commandPreprocessor = new CommandPreprocessor(this);
         
         // Register event listeners
@@ -132,6 +140,17 @@ public final class FrizzlenEdit extends JavaPlugin {
         getCommand("drain").setExecutor(new BlockCommands.DrainCommand(this));
         getCommand("cyl").setExecutor(new BlockCommands.CylinderCommand(this));
         getCommand("removenear").setExecutor(new BlockCommands.RemoveNearCommand(this));
+        getCommand("sphere").setExecutor(new SphereCommand(this));
+        getCommand("pyramid").setExecutor(new PyramidCommand(this));
+        getCommand("fill").setExecutor(new BlockCommands.FillCommand(this));
+        getCommand("walls").setExecutor(new BlockCommands.WallsCommand(this));
+        getCommand("outline").setExecutor(new BlockCommands.OutlineCommand(this));
+        getCommand("hollow").setExecutor(new BlockCommands.HollowCommand(this));
+        getCommand("naturalize").setExecutor(new BlockCommands.NaturalizeCommand(this));
+        getCommand("overlay").setExecutor(new BlockCommands.OverlayCommand(this));
+        getCommand("caves").setExecutor(new BlockCommands.CavesCommand(this));
+        getCommand("regen").setExecutor(new BlockCommands.RegenCommand(this));
+        getCommand("chunkinfo").setExecutor(new BlockCommands.ShowChunkInfoCommand(this));
         
         // Register history commands
         getCommand("undo").setExecutor(new BlockCommands.UndoCommand(this));

@@ -63,6 +63,9 @@ public class CommandPreprocessor implements Listener {
         editCommands.add("regen");
         editCommands.add("chunkinfo");
         editCommands.add("removenear");
+        editCommands.add("sphere");
+        editCommands.add("cyl");
+        editCommands.add("pyramid");
     }
     
     /**

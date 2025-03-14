@@ -160,6 +160,18 @@ commands:
     permission: frizzlenedit.block.cylinder
     aliases: [//cyl, //cylinder]
   
+  sphere:
+    description: Create a sphere at your position
+    usage: //sphere <pattern> <radius> [hollow]
+    permission: frizzlenedit.block.sphere
+    aliases: [//sphere]
+  
+  pyramid:
+    description: Create a pyramid at your position
+    usage: //pyramid <pattern> <size> [hollow]
+    permission: frizzlenedit.block.pyramid
+    aliases: [//pyramid]
+  
   # Brush Commands
   brush:
     description: Set a brush
