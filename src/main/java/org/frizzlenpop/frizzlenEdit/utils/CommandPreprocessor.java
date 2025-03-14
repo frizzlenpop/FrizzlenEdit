@@ -62,6 +62,7 @@ public class CommandPreprocessor implements Listener {
         editCommands.add("caves");
         editCommands.add("regen");
         editCommands.add("chunkinfo");
+        editCommands.add("removenear");
     }
     
     /**
@@ -82,6 +83,20 @@ public class CommandPreprocessor implements Listener {
         
         String message = event.getMessage();
         
+        // Handle ///command first (convert to //command) - this ensures triple slash commands work
+        if (message.startsWith("///")) {
+            String commandName = message.substring(3).split(" ")[0].toLowerCase();
+            
+            // Check if this is one of our edit commands
+            if (editCommands.contains(commandName)) {
+                // Convert ///command to //command (or whatever prefix is configured)
+                String newMessage = "/" + commandPrefix + message.substring(3);
+                Logger.debug("Converted command from: " + message + " to: " + newMessage);
+                event.setMessage(newMessage);
+                return;
+            }
+        }
+        
         // Standard format is //command (or whatever prefix is configured)
         if (message.startsWith("/" + commandPrefix)) {
             // Already in the correct format, do nothing
@@ -96,20 +111,6 @@ public class CommandPreprocessor implements Listener {
             if (editCommands.contains(commandName)) {
                 // Convert /command to //command (or whatever prefix is configured)
                 String newMessage = "/" + commandPrefix + message.substring(1);
-                Logger.debug("Converted command from: " + message + " to: " + newMessage);
-                event.setMessage(newMessage);
-                return;
-            }
-        }
-        
-        // Handle ///command (convert to //command)
-        if (message.startsWith("///")) {
-            String commandName = message.substring(3).split(" ")[0].toLowerCase();
-            
-            // Check if this is one of our edit commands
-            if (editCommands.contains(commandName)) {
-                // Convert ///command to //command (or whatever prefix is configured)
-                String newMessage = "/" + commandPrefix + message.substring(3);
                 Logger.debug("Converted command from: " + message + " to: " + newMessage);
                 event.setMessage(newMessage);
                 return;

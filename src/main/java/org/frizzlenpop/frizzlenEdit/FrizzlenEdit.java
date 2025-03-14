@@ -131,6 +131,7 @@ public final class FrizzlenEdit extends JavaPlugin {
         getCommand("smooth").setExecutor(new BlockCommands.SmoothCommand(this));
         getCommand("drain").setExecutor(new BlockCommands.DrainCommand(this));
         getCommand("cyl").setExecutor(new BlockCommands.CylinderCommand(this));
+        getCommand("removenear").setExecutor(new BlockCommands.RemoveNearCommand(this));
         
         // Register history commands
         getCommand("undo").setExecutor(new BlockCommands.UndoCommand(this));

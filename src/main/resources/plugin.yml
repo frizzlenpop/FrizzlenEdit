@@ -148,6 +148,12 @@ commands:
     permission: frizzlenedit.region.drain
     aliases: [//drain]
   
+  removenear:
+    description: Remove blocks of a specific type near you
+    usage: //removenear <radius> <block> | //removenear hand [radius]
+    permission: frizzlenedit.block.removenear
+    aliases: [//removenear]
+  
   cyl:
     description: Create a cylinder at your position
     usage: //cyl <block> <radius> <height> [hollow]
@@ -291,3 +297,4 @@ permissions:
       frizzlenedit.region.smooth: true
       frizzlenedit.region.drain: true
       frizzlenedit.block.cylinder: true
+      frizzlenedit.block.removenear: true

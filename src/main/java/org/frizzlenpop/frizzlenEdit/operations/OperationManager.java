@@ -197,6 +197,27 @@ public class OperationManager {
     }
     
     /**
+     * Create a remove near operation using a specific material.
+     * @param player The player
+     * @param radius The radius around the player to search
+     * @param material The material to remove
+     * @return The operation
+     */
+    public Operation createRemoveNearOperation(Player player, int radius, Material material) {
+        return new RemoveNearOperation(player, radius, material);
+    }
+    
+    /**
+     * Create a remove near operation using the item in the player's hand.
+     * @param player The player
+     * @param radius The radius around the player to search
+     * @return The operation
+     */
+    public Operation createRemoveNearOperation(Player player, int radius) {
+        return new RemoveNearOperation(player, radius);
+    }
+    
+    /**
      * Get the number of active operations.
      * @return The number of active operations
      */

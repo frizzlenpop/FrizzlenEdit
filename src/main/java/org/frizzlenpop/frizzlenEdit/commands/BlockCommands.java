@@ -529,4 +529,120 @@ public class BlockCommands {
             return true;
         }
     }
+    
+    /**
+     * Command handler for the removenear command.
+     */
+    public static class RemoveNearCommand implements CommandExecutor {
+        private final FrizzlenEdit plugin;
+        
+        public RemoveNearCommand(FrizzlenEdit plugin) {
+            this.plugin = plugin;
+        }
+        
+        @Override
+        public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.RED + "This command can only be used by players.");
+                return true;
+            }
+            
+            Player player = (Player) sender;
+            
+            if (!player.hasPermission("frizzlenedit.block.removenear")) {
+                player.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+                return true;
+            }
+            
+            // Default radius
+            int radius = 5;
+            boolean useHandItem = false;
+            Material material = null;
+            
+            if (args.length >= 1) {
+                // Check if the first argument is "hand"
+                if (args[0].equalsIgnoreCase("hand")) {
+                    useHandItem = true;
+                    
+                    // If there's a second argument, it's the radius
+                    if (args.length >= 2) {
+                        try {
+                            radius = Integer.parseInt(args[1]);
+                            if (radius <= 0 || radius > 50) {
+                                player.sendMessage(ChatColor.RED + "Radius must be between 1 and 50.");
+                                return true;
+                            }
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ChatColor.RED + "Invalid radius. Usage: //removenear hand [radius]");
+                            return true;
+                        }
+                    }
+                } else {
+                    // First argument is either material or radius
+                    try {
+                        // Try to parse as radius
+                        radius = Integer.parseInt(args[0]);
+                        if (radius <= 0 || radius > 50) {
+                            player.sendMessage(ChatColor.RED + "Radius must be between 1 and 50.");
+                            return true;
+                        }
+                        
+                        // If there's a second argument, it's the material
+                        if (args.length >= 2) {
+                            try {
+                                material = Material.valueOf(args[1].toUpperCase());
+                            } catch (IllegalArgumentException e) {
+                                player.sendMessage(ChatColor.RED + "Invalid material: " + args[1]);
+                                return true;
+                            }
+                        } else {
+                            player.sendMessage(ChatColor.RED + "Please specify a material. Usage: //removenear <radius> <material>");
+                            return true;
+                        }
+                    } catch (NumberFormatException e) {
+                        // First argument must be material
+                        try {
+                            material = Material.valueOf(args[0].toUpperCase());
+                            
+                            // If there's a second argument, it's the radius
+                            if (args.length >= 2) {
+                                try {
+                                    radius = Integer.parseInt(args[1]);
+                                    if (radius <= 0 || radius > 50) {
+                                        player.sendMessage(ChatColor.RED + "Radius must be between 1 and 50.");
+                                        return true;
+                                    }
+                                } catch (NumberFormatException ex) {
+                                    player.sendMessage(ChatColor.RED + "Invalid radius. Usage: //removenear <material> [radius]");
+                                    return true;
+                                }
+                            }
+                        } catch (IllegalArgumentException ex) {
+                            player.sendMessage(ChatColor.RED + "Invalid material: " + args[0]);
+                            return true;
+                        }
+                    }
+                }
+            } else {
+                // No arguments, show usage
+                player.sendMessage(ChatColor.RED + "Usage:");
+                player.sendMessage(ChatColor.RED + "  //removenear <radius> <material> - Remove blocks of a material");
+                player.sendMessage(ChatColor.RED + "  //removenear <material> [radius] - Remove blocks of a material");
+                player.sendMessage(ChatColor.RED + "  //removenear hand [radius] - Remove blocks matching item in hand");
+                return true;
+            }
+            
+            // Create and execute the operation
+            Operation operation;
+            if (useHandItem) {
+                operation = plugin.getOperationManager().createRemoveNearOperation(player, radius);
+            } else {
+                operation = plugin.getOperationManager().createRemoveNearOperation(player, radius, material);
+            }
+            
+            plugin.getOperationManager().execute(player, operation);
+            
+            return true;
+        }
+    }
 } 
